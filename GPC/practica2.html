@@ -9,14 +9,29 @@
             margin: 0px;
             overflow: hidden;
         }
+        #info {
+            position: absolute;
+            bottom: 0px;
+            left: 50px;
+            width: 30%;
+            text-align: left;
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
     <!-- Contenedor de la app -->
     <div id="container"></div>
 
+    <div id="info">
+        <h2>App chingona</h2>
+    </div>
+
     <!-- Scripts de biblioteca y app -->
-    <script src="lib/three.min_r140.js"></script>
-    <script src="js/practica2.js"></script>
+    <script type="importmap">
+        { "imports": {"three": "./lib/three.module.js"} }
+    </script>
+
+    <script type="module" src="./js/practica2.js"></script>
 </body>
 </html>
