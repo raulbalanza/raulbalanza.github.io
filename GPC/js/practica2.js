@@ -22,8 +22,18 @@ function init() {
     // Instanciar la camara
     let aspectRatio = window.innerWidth / window.innerHeight
     camera = new THREE.PerspectiveCamera( 75, aspectRatio, 1, 3000 )
-    camera.position.set( 150, 300, 0 )
-    camera.lookAt(0, 100, 0)
+    camera.position.set( 100, 300, 0 )
+    camera.lookAt(0, 120, 0)
+    
+    document.getElementById("top_view_button").addEventListener("click", () => {
+        camera.position.set( 100, 300, 0 )
+        camera.lookAt(0, 120, 0)
+    })
+
+    document.getElementById("front_view_button").addEventListener("click", () => {
+        camera.position.set( 150, 230, 0 )
+        camera.lookAt(0, 120, 0)
+    })
     
 }
 
@@ -41,14 +51,14 @@ function loadScene() {
 
     robot = new THREE.Object3D()
 
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(50, 50, 15), material)
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(50, 50, 15, 20), material)
     robot.add(base)
     scene.add(robot)
 
     const brazo = new THREE.Object3D()
     robot.add(brazo)
 
-    const eje = new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 18), material)
+    const eje = new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 18, 20), material)
     eje.rotateX(-Math.PI/2)
     brazo.add(eje)
 
@@ -56,7 +66,7 @@ function loadScene() {
     esparrago.position.y += 120/2
     brazo.add(esparrago)
 
-    const esfera = new THREE.Mesh(new THREE.SphereGeometry(20), material)
+    const esfera = new THREE.Mesh(new THREE.SphereGeometry(20, 15, 15), material)
     esfera.position.y += 120
     brazo.add(esfera)
 
@@ -64,11 +74,11 @@ function loadScene() {
     antebrazo.position.y += 120
     brazo.add(antebrazo)
 
-    const disco = new THREE.Mesh(new THREE.CylinderGeometry(22, 22, 6), material)
+    const disco = new THREE.Mesh(new THREE.CylinderGeometry(22, 22, 6, 20), material)
     antebrazo.add(disco)
 
-    const diffX = [-10, 10, -10, 10]
-    const diffZ = [-10, 10, 10, -10]
+    const diffX = [-8, 8, -8, 8]
+    const diffZ = [-8, 8, 8, -8]
     
     for (let i = 0; i < 4; i++) {
         const nervio = new THREE.Mesh(new THREE.BoxGeometry(4, 80, 4), material)
@@ -78,7 +88,7 @@ function loadScene() {
         antebrazo.add(nervio)
     }
 
-    const mano = new THREE.Mesh(new THREE.CylinderGeometry(15, 15, 40), material)
+    const mano = new THREE.Mesh(new THREE.CylinderGeometry(15, 15, 40, 20), material)
     mano.position.y += 80
     mano.rotateX(-Math.PI/2)
     antebrazo.add(mano)
@@ -125,8 +135,11 @@ function loadScene() {
 }
 
 const update = () => {
-    angulo += 0.01
-    robot.rotation.y = angulo
+    const checkbox = document.getElementById("rotation_checkbox")
+    if (checkbox.checked) {
+        angulo += 0.01
+        robot.rotation.y = angulo
+    }
 }
 
 function render() {
