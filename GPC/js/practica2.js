@@ -93,13 +93,6 @@ function loadScene() {
     mano.rotateX(-Math.PI/2)
     antebrazo.add(mano)
 
-    const pinzaIz = new THREE.Object3D()
-    mano.add(pinzaIz)
-    const palma = new THREE.Mesh(new THREE.BoxGeometry(19, 4, 20), material)
-    palma.position.x += 17
-    palma.position.y += 15
-    pinzaIz.add(palma)
-
     // Definicion del dedo usando BufferGeometry
     const dedoForma = new THREE.BufferGeometry()
 
@@ -108,6 +101,14 @@ function loadScene() {
     ]), 3))
     dedoForma.setIndex([ 0,1,3,1,3,2, 4,5,7,5,7,6, 0,4,3, 1,5,0, 2,6,3, 3,7,2 ])
 
+    // Definicion de la pinza izquierda
+    const pinzaIz = new THREE.Object3D()
+    mano.add(pinzaIz)
+    const palma = new THREE.Mesh(new THREE.BoxGeometry(19, 4, 20), material)
+    palma.position.x += 17
+    palma.position.y += 15
+    pinzaIz.add(palma)
+
     const dedo = new THREE.Mesh(dedoForma, material);
     dedo.position.x += 17 + 19/2
     dedo.position.y += 15 - 4/2
@@ -115,6 +116,7 @@ function loadScene() {
     dedo.rotation.x = -Math.PI/2
     pinzaIz.add(dedo)
 
+    // Definicion de la pinza derecha
     const pinzaDer = new THREE.Object3D()
     mano.add(pinzaDer)
     const palmaDer = new THREE.Mesh(new THREE.BoxGeometry(19, 4, 20), material)
