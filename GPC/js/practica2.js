@@ -22,7 +22,7 @@ function init() {
     // Instanciar la camara
     let aspectRatio = window.innerWidth / window.innerHeight
     camera = new THREE.PerspectiveCamera( 75, aspectRatio, 1, 3000 )
-    camera.position.set( 100, 300, 0 )
+    camera.position.set( 150, 230, 0 )
     camera.lookAt(0, 120, 0)
     
     document.getElementById("top_view_button").addEventListener("click", () => {
