@@ -49,12 +49,15 @@ function loadScene() {
     suelo.rotateX(-Math.PI/2)
     scene.add(suelo)
 
+    // Brazo robot articulado
     robot = new THREE.Object3D()
 
+    // Base
     const base = new THREE.Mesh(new THREE.CylinderGeometry(50, 50, 15, 20), material)
     robot.add(base)
     scene.add(robot)
 
+    // Brazo: eje + esparrago + rotula
     const brazo = new THREE.Object3D()
     robot.add(brazo)
 
@@ -70,6 +73,7 @@ function loadScene() {
     esfera.position.y += 120
     brazo.add(esfera)
 
+    // Antebrazo: disco + (nervios * 4) + cilindro
     const antebrazo = new THREE.Object3D()
     antebrazo.position.y += 120
     brazo.add(antebrazo)
@@ -88,6 +92,7 @@ function loadScene() {
         antebrazo.add(nervio)
     }
 
+    // Mano: pinza izquierda + pinza derecha
     const mano = new THREE.Mesh(new THREE.CylinderGeometry(15, 15, 40, 20), material)
     mano.position.y += 80
     mano.rotateX(-Math.PI/2)
@@ -97,31 +102,31 @@ function loadScene() {
     const dedoForma = new THREE.BufferGeometry()
 
     dedoForma.setAttribute("position", new THREE.BufferAttribute(new Float32Array([
-        0,0,0, 19,-5,0, 19,-15,0, 0,-20,0,      // Back (0,1,2,3)        
-        0,0,4, 19,-5,2, 19,-15,2, 0,-20,4,      // Front (4,5,6,7)
-        0,0,0, 0,-20,0, 0,-20,4, 0,0,4,         // Left (8,9,10,11)
-        19,-5,2, 19,-5,0, 19,-15,0, 19,-15,2,   // Right (12,13,14,15)
-        0,0,4, 0,0,0, 19,-5,0, 19,-5,2,         // Up (16,17,18,19)
-        0,-20,4, 0,-20,0, 19,-15,0, 19,-15,2    // Down (20,21,22,23)
+        0,20,4, 0,0,4, 19,5,4, 19,15,4,      // Back (0,1,2,3) 
+        19,15,2, 19,5,2, 0,0,0, 0,20,0,      // Front (4,5,6,7)
+        0,20,0, 0,0,0, 0,0,4, 0,20,4,        // Left (8,9,10,11)
+        19,15,4, 19,5,4, 19,5,2, 19,15,2,    // Right (12,13,14,15)       
+        0,20,4,19,15,4, 19,15,2, 0,20,0,     // Up (16,17,18,19)
+        19,5,2, 19,5,4, 0,0,4, 0,0,0,        // Down (20,21,22,23)
+    ]), 3))
+
+    dedoForma.setAttribute("normal", new THREE.BufferAttribute(new Float32Array([
+        0,0,1, 0,0,1, 0,0,1, 0,0,1,                                                             // Back
+        0.104684,0,-0.994505, 0.104684,0,-0.994505, 0.104684,0,-0.994505, 0.104684,0,-0.994505, // Front
+        -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0,                                                 // Left
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,                                                     // Right
+        0.254493,0.967074,0, 0.254493,0.967074,0, 0.254493,0.967074,0, 0.254493,0.967074,0,     // Up
+        0.254493,-0.967074,0, 0.254493,-0.967074,0, 0.254493,-0.967074,0, 0.254493,-0.967074,0  // Down
     ]), 3))
 
     dedoForma.setIndex([
-        0,1,3, 1,3,2,       // Back
-        7,4,5, 5,7,6,       // Front
-        8,9,11, 9,11,10,    // Left
-        12,13,15, 13,15,14, // Right
-        16,17,18, 16,18,19, // Up
-        20,21,22, 20,22,23  // Down
+        0,1,2, 2,3,0,       // Back
+        4,5,6, 6,7,4,       // Front
+        8,9,10, 10,11,8,    // Left
+        12,13,14, 14,15,12, // Right
+        16,17,18, 18,19,16, // Up
+        20,21,22, 22,23,20  // Down
     ])
-
-    dedoForma.setAttribute("normal", new THREE.BufferAttribute(new Float32Array([
-        0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 
-        0.10468478500843048, 0, 0.9945054650306702, 0.10468478500843048, 0, 0.9945054650306702, 0.10468478500843048, 0, 0.9945054650306702, 0.10468478500843048, 0, 0.9945054650306702, 
-        -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 
-        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 
-        0.2544932961463928, 0.9670745134353638, 0, 0.2544932961463928, 0.9670745134353638, 0, 0.2544932961463928, 0.9670745134353638, 0, 0.2544932961463928, 0.9670745134353638, 0, 
-        0.2544932961463928, -0.9670745134353638, 0, 0.2544932961463928, -0.9670745134353638, 0, 0.2544932961463928, -0.9670745134353638, 0, 0.2544932961463928, -0.9670745134353638, 0
-    ]), 3))
 
     // Definicion de la pinza izquierda
     const pinzaIz = new THREE.Object3D()
@@ -133,9 +138,9 @@ function loadScene() {
 
     const dedo = new THREE.Mesh(dedoForma, material);
     dedo.position.x += 17 + 19/2
-    dedo.position.y += 15 - 4/2
+    dedo.position.y += 15 + 4/2
     dedo.position.z -= 20/2
-    dedo.rotation.x = -Math.PI/2
+    dedo.rotation.x = Math.PI/2
     pinzaIz.add(dedo)
 
     // Definicion de la pinza derecha
@@ -148,13 +153,13 @@ function loadScene() {
 
     const dedoDer = new THREE.Mesh(dedoForma, material);
     dedoDer.position.x += 17 + 19/2
-    dedoDer.position.y -= 15 - 4/2
+    dedoDer.position.y -= 15 + 4/2
     dedoDer.position.z += 20/2
-    dedoDer.rotation.x = Math.PI/2
+    dedoDer.rotation.x = -Math.PI/2
     pinzaDer.add(dedoDer)
 
     // Helper de ejes
-    scene.add(new THREE.AxesHelper(3))
+    scene.add(new THREE.AxesHelper(20))
 
 }
 
