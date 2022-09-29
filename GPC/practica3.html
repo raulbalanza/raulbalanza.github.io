@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GPC - Pr&aacute;ctica 3</title>
+    <style>
+        body {
+            background-color: white;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info {
+            position: absolute;
+            bottom: 0px;
+            left: 50px;
+            width: 30%;
+            text-align: left;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor de la app -->
+    <div id="container"></div>
+
+    <div id="info" style="margin-bottom: 15px;">
+        <h2>Pr&aacute;ctica 3<br>Ra&uacute;l Balanz&aacute;</h2>    
+        <label><input type="checkbox" id="rotation_checkbox" value="first_checkbox"> Rotaci&oacute;n autom&aacute;tica</label><br>
+    </div>
+
+    <!-- Scripts de biblioteca y app -->
+    <script type="importmap">
+        { "imports": {"three": "./lib/three.module.js"} }
+    </script>
+
+    <script type="module" src="./js/practica3.js"></script>
+</body>
+</html>
