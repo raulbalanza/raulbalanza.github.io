@@ -29,10 +29,10 @@ function init() {
     const aspectRatio = window.innerWidth / window.innerHeight
     camera = new THREE.PerspectiveCamera( 75, aspectRatio, 1, 1500 )
     camera.position.set( 150, 230, 0 )
-    camera.lookAt(0, 120, 0)
 
     cameraControls = new OrbitControls(camera, renderer.domElement)
     cameraControls.target.set(0, 120, 0)
+    camera.lookAt(0, 120, 0)
 
     // Limitar zoom
     cameraControls.maxDistance = 500
