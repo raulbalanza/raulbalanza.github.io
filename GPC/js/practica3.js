@@ -202,7 +202,7 @@ function render() {
         window.innerWidth * 0.25 : window.innerHeight * 0.25
 
     // Camara cenital
-    renderer.setViewport(0,window.innerHeight-cameraSize,cameraSize,cameraSize)
+    renderer.setViewport(0,window.innerHeight-cameraSize+1,cameraSize,cameraSize)
     renderer.render(scene, camaraCenital)
 
 }
