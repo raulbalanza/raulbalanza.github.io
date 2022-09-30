@@ -175,7 +175,7 @@ function loadScene() {
     pinzaDer.add(dedoDer)
 
     // Helper de ejes
-    scene.add(new THREE.AxesHelper(20))
+    scene.add(new THREE.AxesHelper(100))
 
 }
 
