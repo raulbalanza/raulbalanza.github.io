@@ -65,7 +65,7 @@ function loadScene() {
     eje.rotateX(-Math.PI/2)
     brazo.add(eje)
 
-    const esparrago = new THREE.Mesh(new THREE.BoxGeometry(12, 120, 18), material)
+    const esparrago = new THREE.Mesh(new THREE.BoxGeometry(18, 120, 12), material)
     esparrago.position.y += 120/2
     brazo.add(esparrago)
 
