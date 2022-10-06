@@ -9,8 +9,8 @@ let renderer, scene, camera;
 // Otras globales
 let robot, material, cameraControls, movementController;
 let brazo, antebrazo, mano, pinzaIz, pinzaDer;
-const posIniciales = {}
-const funcActualizacion = [];
+const posIniciales = {};
+let funcActualizacion, lastTimeMsec = null;
 
 // Variables camara cenital
 let camaraCenital;
@@ -47,19 +47,21 @@ function init() {
     camaraCenital.up = new THREE.Vector3(0,0,-1)
 
     const keyboard = new THREEx.KeyboardState(renderer.domElement);
-    
-    funcActualizacion.push(function(delta, now){
+    renderer.domElement.setAttribute("tabIndex", "0");
+	renderer.domElement.focus();
+
+    funcActualizacion = (delta) => {
 		if (keyboard.pressed('left')) {
-			robot.position.y -= 1 * delta;		
+			robot.position.z -= 1 * delta;		
 		} else if( keyboard.pressed('right')) {
-			robot.position.y += 1 * delta;
+			robot.position.z += 1 * delta;
 		}
 		if (keyboard.pressed('down')) {
-			robot.position.x += 1 * delta;		
-		} else if (keyboard.pressed('up')) {
 			robot.position.x -= 1 * delta;		
+		} else if (keyboard.pressed('up')) {
+			robot.position.x += 1 * delta;		
 		}
-	})
+	}
 
     // Manejador de cambio de dimensiones de ventana
     window.addEventListener("resize", windowResize)
@@ -75,7 +77,7 @@ function loadScene() {
 
     material = new THREE.MeshNormalMaterial({
         wireframe: false,
-        flatShading: true
+        flatShading: false
     })
 
     // Suelo (perpendicular a eje Z por defecto)
@@ -224,14 +226,15 @@ function addGui()
     gui.add(movementController, "giro_antebrazo_z", -90.0, 90.0, 0.025).name("Giro Antebrazo Z");
     gui.add(movementController, "giro_pinza", -40.0, 220.0, 0.025).name("Giro Pinza");
     gui.add(movementController, "separacion_pinza", -0.0, 15.0, 0.025).name("Separacion Pinza");
-	gui.add(movementController, 'wireframe' ).name("alambres");
+	gui.add(movementController, 'wireframe' )
+        .name("alambres")
+        .onChange(value => {
+            material.wireframe = value
+        });
     gui.add(movementController, 'animation' ).name("Anima");
 }
 
-let lastTimeMsec = null;
 const update = () => {
-
-    material.wireframe = movementController["wireframe"]
 
     const desplazamientoPinza = movementController["separacion_pinza"]
     pinzaIz.position.y = posIniciales["pinzaIz"] - desplazamientoPinza
@@ -246,15 +249,6 @@ const update = () => {
     antebrazo.rotation.z = deg_to_rad(movementController["giro_antebrazo_z"])
 
     // considerar cambio a onchange
-
-    /* measure time
-    lastTimeMsec	= lastTimeMsec || nowMsec-1000/60
-    var deltaMsec	= Math.min(200, nowMsec - lastTimeMsec)
-    lastTimeMsec	= nowMsec
-    // call each update function
-    updateFcts.forEach(function(updateFn){
-        updateFn(deltaMsec/1000, nowMsec/1000)
-    })*/
 
 }
 
@@ -275,6 +269,15 @@ function render() {
     // Camara cenital
     renderer.setViewport(0,window.innerHeight-cameraSize+1,cameraSize,cameraSize)
     renderer.render(scene, camaraCenital)
+
+    // Medir diferencia de tiempo
+    const nowMsec = new Date().getMilliseconds()
+    lastTimeMsec = lastTimeMsec || nowMsec - 1000 / 60
+    var deltaMsec = Math.max(200, nowMsec - lastTimeMsec)
+    lastTimeMsec = nowMsec
+
+    // Mover robot
+    funcActualizacion(deltaMsec / 1000)
 
 }
 
