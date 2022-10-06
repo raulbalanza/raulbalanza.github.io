@@ -2,6 +2,7 @@
 import * as THREE from "../lib/three.module.js"
 import { OrbitControls } from "../lib/OrbitControls.module.js"
 import { GUI } from "../lib/lil-gui.module.min.js"
+import { TWEEN } from "../lib/tween.module.min.js"
 
 // Variables de consenso
 let renderer, scene, camera;
@@ -53,7 +54,7 @@ function init() {
     funcActualizacion = (delta) => {
 		if (keyboard.pressed('left')) {
 			robot.position.z -= 1 * delta;		
-		} else if( keyboard.pressed('right')) {
+		} else if (keyboard.pressed('right')) {
 			robot.position.z += 1 * delta;
 		}
 		if (keyboard.pressed('down')) {
@@ -77,7 +78,7 @@ function loadScene() {
 
     material = new THREE.MeshNormalMaterial({
         wireframe: false,
-        flatShading: false
+        flatShading: true
     })
 
     // Suelo (perpendicular a eje Z por defecto)
@@ -203,29 +204,56 @@ function loadScene() {
 
 function addGui()
 {
+
 	// Definicion de los controles
 	movementController = {
-		giro_base: 0,
+		giro_base: 0.0,
 		giro_brazo: 0.0,
-		giro_antebrazo_y: 0,
-		giro_antebrazo_z: 0,
-        giro_pinza: 0,
-        separacion_pinza: 10,
+		giro_antebrazo_y: 0.0,
+		giro_antebrazo_z: 0.0,
+        giro_pinza: 0.0,
+        separacion_pinza: 10.0,
         wireframe: false,
-        animation: () => {}
+        animation: () => {
+            
+            new TWEEN.Tween(movementController)
+                .to({
+                    giro_base: [180.0, -180.0, 0.0],
+                    giro_brazo: [45.0, -45.0, 0.0],
+                    giro_antebrazo_y: [180.0, -180.0, 0.0],
+                    giro_antebrazo_z: [-90.0, 90.0, 0.0],
+                    giro_pinza: [220.0, -40.0, 0.0],
+                    separacion_pinza: [0.0, 15.0, 10.0],
+                }, 10000)
+                .interpolation(TWEEN.Interpolation.Linear)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .start()
+
+        }
 	};
 
 	// Creacion interfaz
 	const gui = new GUI({ title: "Control Robot" });
-    gui.name = "jeje"
 
 	// Construccion del menu
-    gui.add(movementController, "giro_base", -180.0, 180.0, 0.025).name("Giro Base");
-    gui.add(movementController, "giro_brazo", -45.0, 45.0, 0.025).name("Giro Brazo");
-    gui.add(movementController, "giro_antebrazo_y", -180.0, 180.0, 0.025).name("Giro Antebrazo Y");
-    gui.add(movementController, "giro_antebrazo_z", -90.0, 90.0, 0.025).name("Giro Antebrazo Z");
-    gui.add(movementController, "giro_pinza", -40.0, 220.0, 0.025).name("Giro Pinza");
-    gui.add(movementController, "separacion_pinza", -0.0, 15.0, 0.025).name("Separacion Pinza");
+    gui.add(movementController, "giro_base", -180.0, 180.0, 0.025)
+        .name("Giro Base")
+        .listen();
+    gui.add(movementController, "giro_brazo", -45.0, 45.0, 0.025)
+        .name("Giro Brazo")
+        .listen();
+    gui.add(movementController, "giro_antebrazo_y", -180.0, 180.0, 0.025)
+        .name("Giro Antebrazo Y")
+        .listen();
+    gui.add(movementController, "giro_antebrazo_z", -90.0, 90.0, 0.025)
+        .name("Giro Antebrazo Z")
+        .listen();
+    gui.add(movementController, "giro_pinza", -40.0, 220.0, 0.025)
+        .name("Giro Pinza")
+        .listen();
+    gui.add(movementController, "separacion_pinza", 0.0, 15.0, 0.025)
+        .name("Separacion Pinza")
+        .listen();
 	gui.add(movementController, 'wireframe' )
         .name("alambres")
         .onChange(value => {
@@ -236,9 +264,9 @@ function addGui()
 
 const update = () => {
 
-    const desplazamientoPinza = movementController["separacion_pinza"]
-    pinzaIz.position.y = posIniciales["pinzaIz"] - desplazamientoPinza
-    pinzaDer.position.y = posIniciales["pinzaDer"] + desplazamientoPinza
+    // Actualizar variables del menu
+    pinzaIz.position.y = posIniciales["pinzaIz"] - movementController["separacion_pinza"]
+    pinzaDer.position.y = posIniciales["pinzaDer"] + movementController["separacion_pinza"]
 
     robot.rotation.y = deg_to_rad(movementController["giro_base"])
     brazo.rotation.z = deg_to_rad(movementController["giro_brazo"])
@@ -248,11 +276,12 @@ const update = () => {
     antebrazo.rotation.y = deg_to_rad(movementController["giro_antebrazo_y"])
     antebrazo.rotation.z = deg_to_rad(movementController["giro_antebrazo_z"])
 
-    // considerar cambio a onchange
+    // Actualizar animaciones
+    TWEEN.update()
 
 }
 
-function render() {
+function render(time) {
     requestAnimationFrame(render)
     update()
 
@@ -270,14 +299,11 @@ function render() {
     renderer.setViewport(0,window.innerHeight-cameraSize+1,cameraSize,cameraSize)
     renderer.render(scene, camaraCenital)
 
-    // Medir diferencia de tiempo
-    const nowMsec = new Date().getMilliseconds()
-    lastTimeMsec = lastTimeMsec || nowMsec - 1000 / 60
-    var deltaMsec = Math.max(200, nowMsec - lastTimeMsec)
-    lastTimeMsec = nowMsec
-
     // Mover robot
-    funcActualizacion(deltaMsec / 1000)
+    lastTimeMsec = lastTimeMsec || time
+    const delta = time - lastTimeMsec
+    funcActualizacion(delta / 10)
+    lastTimeMsec = time
 
 }
 
