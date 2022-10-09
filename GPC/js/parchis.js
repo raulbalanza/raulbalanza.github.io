@@ -4,13 +4,37 @@ import { OrbitControls } from "../lib/OrbitControls.module.js"
 import { GUI } from "../lib/lil-gui.module.min.js"
 import { TWEEN } from "../lib/tween.module.min.js"
 import { ColladaLoader } from "../lib/ColladaLoader.js"
+import { GLTFLoader } from "../lib/GLTFLoader.module.js";
 
 // Variables de consenso
 let renderer, scene, camera;
 
 // Otras globales
 let robot, material, cameraControls, movementController;
-let brazo, antebrazo, mano, pinzaIz, pinzaDer;
+let dado;
+const y_suelo_fichas = 27.5
+const fichas = {
+    "rojo": {
+        "pos_inicial": {x: 70, z: 70},
+        "color": {r: 200, g: 0, b: 0},
+        "pos_salida": {x: 24, z: 66}
+    },
+    "verde": {
+        "pos_inicial": {x: -70, z: 70},
+        "color": {r: 0, g: 150, b: 0},
+        "pos_salida": {x: -66, z: 24},
+    },
+    "amarillo": {
+        "pos_inicial": {x: -70, z: -70},
+        "color": {r: 200, g: 200, b: 0},
+        "pos_salida": {x: -24, z: -66},
+    },
+    "azul": {
+        "pos_inicial": {x: 70, z: -70},
+        "color": {r: 0, g: 0, b: 200},
+        "pos_salida": {x: 66, z: -24}
+    }
+}
 const posIniciales = {};
 let funcActualizacion, lastTimeMsec = null, elf;
 
@@ -102,43 +126,14 @@ function loadScene() {
     // Helper de ejes
     scene.add(new THREE.AxesHelper(100))
 
-    // collada
+    // Cargar tablero
     const loader = new ColladaLoader();
-    loader.load( './models/tablero/model.dae', function ( collada ) {
+    loader.load('./models/tablero/model.dae', collada => {
 
         const escenita = collada.scene
 
         escenita.children[0].children = escenita.children[0].children
             .filter(elem => elem.type != "LineSegments" && elem.type != "Group")
-        
-        /*
-        
-        color rojo (655)
-        411 -> azul
-        415 -> rojo
-        437 -> verde
-        455 -> amarillo
-
-        verde (657)
-        413 -> azul
-        419 -> rojo
-        435 -> verde
-        449 -> amarillo
-
-        azul (661)
-        407 -> azul
-        421 -> rojo
-        431 -> verde
-        451 -> amarillo
-
-        amarillo
-        azul (659)
-        409 -> azul
-        417 -> rojo
-        433 -> verde
-        453 -> amarillo
-
-        */ 
 
         const colores = [
             [415, [419, 421, 417]], // Rojo
@@ -159,7 +154,44 @@ function loadScene() {
         escenita.position.set(-110,0,452)
         scene.add(escenita);
 
+        const glloader = new GLTFLoader();
+        glloader.load('models/dado/scene.gltf', add_dice);
+        glloader.load('models/ficha.glb', add_pawns);
+        
     } );
+
+}
+
+const add_dice = (objeto) => {
+
+    dado = objeto.scene
+    objeto.scene.scale.set(1000,1000,1000);
+    objeto.scene.position.y = 25.9;
+    objeto.scene.name = 'dado';
+    scene.add(dado);
+
+}
+
+const add_pawns = (objeto) => {
+
+    for (const color in fichas) {
+        const ficha = objeto.scene.children[0].children[0].children[1].clone()
+        for (const parte of ficha.children){
+            const r = fichas[color]["color"].r/255
+            const g = fichas[color]["color"].g/255
+            const b = fichas[color]["color"].b/255
+            parte.material = parte.material.clone()
+            parte.material.color.setRGB(r, g, b)
+        }
+        ficha.name = 'ficha_' + color;
+        ficha.position.x = fichas[color]["pos_inicial"].x
+        ficha.position.y = y_suelo_fichas
+        ficha.position.z = fichas[color]["pos_inicial"].z
+        ficha.scale.set(2,2,2);
+        ficha.rotation.x = -Math.PI/2
+        fichas[color]["objeto"] = ficha
+        scene.add(ficha);
+    }
 
 }
 
