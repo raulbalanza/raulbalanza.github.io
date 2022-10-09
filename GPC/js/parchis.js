@@ -226,7 +226,7 @@ function addGui()
 	};
 
 	// Creacion interfaz
-	const gui = new GUI({ title: "Control Robot" });
+	const gui = new GUI({ title: "Control partida" });
 
 	// Construccion del menu
     gui.add(movementController, "giro_base", -180.0, 180.0, 0.025)
@@ -253,6 +253,13 @@ function addGui()
             material.wireframe = value
         });
     gui.add(movementController, 'animation' ).name("Anima");
+
+    const folder = gui.addFolder( 'Position' );
+    let elem = folder.add(movementController, "separacion_pinza", 0.0, 15.0, 0.025);
+    elem.disable()
+    elem.enable()
+    folder.show()
+
 }
 
 const update = () => {
