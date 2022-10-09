@@ -13,28 +13,34 @@ let renderer, scene, camera;
 let robot, material, cameraControls, movementController;
 let dado;
 const y_suelo_fichas = 27.5
+const pos_fichas = {}
 const fichas = {
     "rojo": {
         "pos_inicial": {x: 70, z: 70},
         "color": {r: 200, g: 0, b: 0},
-        "pos_salida": {x: 24, z: 66}
+        "pos_salida": {x: 24, z: 66},
+        "casilla_actual": -1
     },
     "verde": {
         "pos_inicial": {x: -70, z: 70},
         "color": {r: 0, g: 150, b: 0},
         "pos_salida": {x: -66, z: 24},
+        "casilla_actual": -1
     },
     "amarillo": {
         "pos_inicial": {x: -70, z: -70},
         "color": {r: 200, g: 200, b: 0},
         "pos_salida": {x: -24, z: -66},
+        "casilla_actual": -1
     },
     "azul": {
         "pos_inicial": {x: 70, z: -70},
         "color": {r: 0, g: 0, b: 200},
-        "pos_salida": {x: 66, z: -24}
+        "pos_salida": {x: 66, z: -24},
+        "casilla_actual": -1
     }
 }
+
 const posIniciales = {};
 let funcActualizacion, lastTimeMsec = null, elf;
 
@@ -92,6 +98,14 @@ function init() {
     // Manejador de cambio de dimensiones de ventana
     window.addEventListener("resize", windowResize)
 
+    for (const color in fichas) {
+        pos_fichas[color] = {
+            x: fichas[color]["pos_inicial"].x,
+            y: y_suelo_fichas,
+            z: fichas[color]["pos_inicial"].z
+        }        
+    }
+
 }
 
 function loadScene() {
@@ -127,39 +141,46 @@ function loadScene() {
     scene.add(new THREE.AxesHelper(100))
 
     // Cargar tablero
-    const loader = new ColladaLoader();
-    loader.load('./models/tablero/model.dae', collada => {
+    const colladaLoader = new ColladaLoader();
+    colladaLoader.load('models/tablero/model.dae', add_board);
 
-        const escenita = collada.scene
+    // Cargar dado y fichas
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load('models/dado/scene.gltf', add_dice);
+    gltfLoader.load('models/ficha.glb', add_pawns);
 
-        escenita.children[0].children = escenita.children[0].children
-            .filter(elem => elem.type != "LineSegments" && elem.type != "Group")
+}
 
-        const colores = [
-            [415, [419, 421, 417]], // Rojo
-            [435, [437, 431, 433]], // Verde
-            [407, [411, 413, 409]], // Azul
-            [453, [455, 449, 451]]  // Amarillo
-        ]
+const add_board = (objeto) => {
 
-        for (const color of colores) {
-            const material = escenita.children[0].children.filter(elem => elem.id == color[0])[0].material[0]
-            for (const casilla of color[1]) {
-                const c = escenita.children[0].children.filter(elem => elem.id == casilla)[0]
-                c.material[0] = material
-            }
+    const tablero = objeto.scene
+
+    tablero.children[0].children = tablero.children[0].children
+        .filter(elem => elem.type != "LineSegments" && elem.type != "Group")
+
+    const rojos = tablero.children[0].children.filter(elem => elem.material && elem.material[0].name == "SpaltedMaple2")
+    const verdes = tablero.children[0].children.filter(elem => elem.material && elem.material[0].name == "SpalteMaple")
+    const amarillos = tablero.children[0].children.filter(elem => elem.material && elem.material[0].name == "SpaltedMapleVertical")
+    const azules = tablero.children[0].children.filter(elem => elem.material && elem.material[0].name == "SpaltedMaple2Vertical")
+
+    const colores = [
+        [rojos[1], [verdes[1], azules[1], amarillos[1]]], // Rojo
+        [verdes[2], [rojos[2], azules[2], amarillos[2]]], // Verde
+        [azules[0], [rojos[0], verdes[0], amarillos[0]]], // Azul
+        [amarillos[3], [rojos[3], verdes[3], azules[3]]]  // Amarillo
+    ]
+
+    for (const color of colores) {
+        const material = color[0].material[0]
+        for (const casilla of color[1]) {
+            casilla.material[0] = material
         }
+    }
 
-        escenita.scale.set(10, 10, 10)
-        escenita.position.set(-110,0,452)
-        scene.add(escenita);
-
-        const glloader = new GLTFLoader();
-        glloader.load('models/dado/scene.gltf', add_dice);
-        glloader.load('models/ficha.glb', add_pawns);
-        
-    } );
-
+    tablero.scale.set(10, 10, 10)
+    tablero.position.set(-110,0,452)
+    scene.add(tablero);
+   
 }
 
 const add_dice = (objeto) => {
@@ -207,20 +228,35 @@ function addGui()
         giro_pinza: 0.0,
         separacion_pinza: 10.0,
         wireframe: false,
-        animation: () => {
-            
-            new TWEEN.Tween(movementController)
+        start_match: () => {
+
+            for (const color in pos_fichas) {
+                new TWEEN.Tween(pos_fichas[color])
                 .to({
-                    giro_base: [180.0, -180.0, 0.0],
-                    giro_brazo: [45.0, -45.0, 0.0],
-                    giro_antebrazo_y: [180.0, -180.0, 0.0],
-                    giro_antebrazo_z: [-90.0, 90.0, 0.0],
-                    giro_pinza: [220.0, -40.0, 0.0],
-                    separacion_pinza: [0.0, 15.0, 10.0],
-                }, 10000)
-                .interpolation(TWEEN.Interpolation.Linear)
+                    x: [fichas[color]["pos_salida"].x],
+                    y: [y_suelo_fichas+20, y_suelo_fichas], 
+                    z: [fichas[color]["pos_salida"].z]
+                }, 2000)
+                .interpolation(TWEEN.Interpolation.CatmullRom)
                 .easing(TWEEN.Easing.Quadratic.Out)
                 .start()
+            }
+
+        },
+        end_match: () => {
+
+            for (const color in pos_fichas) {
+                new TWEEN.Tween(pos_fichas[color])
+                .to({
+                    x: [fichas[color]["pos_inicial"].x],
+                    y: [y_suelo_fichas+20, y_suelo_fichas], 
+                    z: [fichas[color]["pos_inicial"].z]
+                }, 2000)
+                .interpolation(TWEEN.Interpolation.CatmullRom)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .start()
+                fichas[color]["casilla_actual"] = -1
+            }
 
         }
 	};
@@ -252,7 +288,8 @@ function addGui()
         .onChange(value => {
             material.wireframe = value
         });
-    gui.add(movementController, 'animation' ).name("Anima");
+    gui.add(movementController, 'start_match' ).name("Comenzar partida");
+    gui.add(movementController, 'end_match' ).name("Finalizar partida");
 
     const folder = gui.addFolder( 'Position' );
     let elem = folder.add(movementController, "separacion_pinza", 0.0, 15.0, 0.025);
@@ -265,6 +302,12 @@ function addGui()
 const update = () => {
 
     // Actualizar variables del menu
+    for (const color in fichas) {
+        if (!fichas[color]["objeto"]) break;
+        fichas[color]["objeto"].position.x = pos_fichas[color].x
+        fichas[color]["objeto"].position.y = pos_fichas[color].y
+        fichas[color]["objeto"].position.z = pos_fichas[color].z
+    }
 
     // Actualizar animaciones
     TWEEN.update()
