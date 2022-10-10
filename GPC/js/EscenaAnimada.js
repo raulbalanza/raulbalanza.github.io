@@ -28,7 +28,6 @@ let movementController;
 // Acciones
 init();
 loadScene();
-setupGui();
 render();
 
 function init()

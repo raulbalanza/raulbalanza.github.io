@@ -11,38 +11,143 @@ let renderer, scene, camera;
 
 // Otras globales
 let robot, material, cameraControls, movementController;
-let dado;
-const y_suelo_fichas = 27.5
+let dado, gui, valorDado = -1, turno = -1;
+const y_suelo_fichas = 24.3
+const pos_casa = {
+    "rojo": [[0, 92],
+    [0, 84],
+    [0, 75]
+    [0, 65.7],
+    [0, 57.5],
+    [0, 49],
+    [0, 40.5],
+    [0, 25.5]],
+    "verde": [[-101.5, 0],
+    [-92.8, 0],
+    [-83.9, 0],
+    [-74.8, 0],
+    [-65.7, 0],
+    [-56.6, 0],
+    [-48, 0],
+    [-39.5, 0],
+    [-24.5, 0]],
+    "amarillo": [[0, -92],
+    [0, -84],
+    [0, -75],
+    [0, -65.7],
+    [0, -57.5],
+    [0, -49],
+    [0, -40.5],
+    [0, -25.5]],
+    "azul": [[92.8, 0],
+    [83.9, 0],
+    [74.8, 0],
+    [65.7, 0],
+    [56.6, 0],
+    [48, 0],
+    [39.5, 0],
+    [24.5, 0]]
+}
+const pos = [
+    [23.1, 65.7],
+    [23.1, 57.5],
+    [23.1, 49],
+    [23.1, 40.5],
+    [39.5, 23.1],
+    [48, 23.1],
+    [56.6, 23.1],
+    [65.7, 23.1],
+    [74.8, 23.1],
+    [83.9, 23.1],
+    [92.8, 23.1],
+    [101.5, 23.1],
+    [101.5, 0],
+    [101.5, -23.1],
+    [92.8, -23.1],
+    [83.9, -23.1],
+    [74.8, -23.1],
+    [65.7, -23.1],
+    [56.6, -23.1],
+    [48, -23.1],
+    [39.5, -23.1],
+    [23.1, -40.5],
+    [23.1, -49],
+    [23.1, -57.5],
+    [23.1, -65.7],
+    [23.1, -75],
+    [23.1, -84],
+    [23.1, -92],
+    [23.1, -101],
+    [0, -101],
+    [-23.1, -101],
+    [-23.1, -92],
+    [-23.1, -84],
+    [-23.1, -75],
+    [-23.1, -65.7],
+    [-23.1, -57.5],
+    [-23.1, -49],
+    [-23.1, -40.5],
+    [-39.5, -23.1],
+    [-48, -23.1],
+    [-56.6, -23.1],
+    [-65.7, -23.1],
+    [-74.8, -23.1],
+    [-83.9, -23.1],
+    [-92.8, -23.1],
+    [-101.5, -23.1],
+    [-101.5, 0],
+    [-101.5, 23.1],
+    [-92.8, 23.1],
+    [-83.9, 23.1],
+    [-74.8, 23.1],
+    [-65.7, 23.1],
+    [-56.6, 23.1],
+    [-48, 23.1],
+    [-39.5, 23.1],
+    [-23.1, 40.5],
+    [-23.1, 49],
+    [-23.1, 57.5],
+    [-23.1, 65.7],
+    [-23.1, 75],
+    [-23.1, 84],
+    [-23.1, 92],
+    [-23.1, 101],
+    [0, 101],
+    [23.1, 101],
+    [23.1, 92],
+    [23.1, 84],
+    [23.1, 75]
+]
 const pos_fichas = {}
 const fichas = {
     "rojo": {
         "pos_inicial": {x: 70, z: 70},
         "color": {r: 200, g: 0, b: 0},
-        "pos_salida": {x: 24, z: 66},
-        "casilla_actual": -1
-    },
-    "verde": {
-        "pos_inicial": {x: -70, z: 70},
-        "color": {r: 0, g: 150, b: 0},
-        "pos_salida": {x: -66, z: 24},
-        "casilla_actual": -1
-    },
-    "amarillo": {
-        "pos_inicial": {x: -70, z: -70},
-        "color": {r: 200, g: 200, b: 0},
-        "pos_salida": {x: -24, z: -66},
-        "casilla_actual": -1
+        "casillas": {actual: -1, salida: 0, entrada: 63},
+        "llegando_casa": false
     },
     "azul": {
         "pos_inicial": {x: 70, z: -70},
         "color": {r: 0, g: 0, b: 200},
-        "pos_salida": {x: 66, z: -24},
-        "casilla_actual": -1
+        "casillas": {actual: -1, salida: 17, entrada: 12},
+        "llegando_casa": false
+    },
+    "amarillo": {
+        "pos_inicial": {x: -70, z: -70},
+        "color": {r: 200, g: 200, b: 0},
+        "casillas": {actual: -1, salida: 34, entrada: 29},
+        "llegando_casa": false
+    },
+    "verde": {
+        "pos_inicial": {x: -70, z: 70},
+        "color": {r: 0, g: 150, b: 0},
+        "casillas": {actual: -1, salida: 51, entrada: 46},
+        "llegando_casa": false
     }
 }
 
 const posIniciales = {};
-let funcActualizacion, lastTimeMsec = null, elf;
+let funcActualizacion, lastTimeMsec = null;
 
 // Variables camara cenital
 let camaraCenital;
@@ -63,7 +168,7 @@ function init() {
     // Instanciar la camara
     const aspectRatio = window.innerWidth / window.innerHeight
     camera = new THREE.PerspectiveCamera( 75, aspectRatio, 1, 1500 )
-    camera.position.set( 150, 230, 0 )
+    camera.position.set( 0, 230, 0 )
 
     cameraControls = new OrbitControls(camera, renderer.domElement)
     cameraControls.target.set(0, 120, 0)
@@ -97,6 +202,8 @@ function init() {
 
     // Manejador de cambio de dimensiones de ventana
     window.addEventListener("resize", windowResize)
+
+    renderer.domElement.addEventListener('dblclick', rayTracing);
 
     for (const color in fichas) {
         pos_fichas[color] = {
@@ -208,11 +315,70 @@ const add_pawns = (objeto) => {
         ficha.position.x = fichas[color]["pos_inicial"].x
         ficha.position.y = y_suelo_fichas
         ficha.position.z = fichas[color]["pos_inicial"].z
-        ficha.scale.set(2,2,2);
+        ficha.scale.set(1.5,1.5,1.5);
         ficha.rotation.x = -Math.PI/2
         fichas[color]["objeto"] = ficha
         scene.add(ficha);
     }
+
+    /*const curPos = [24.5, 0]
+
+    fichas["rojo"]["objeto"].position.x = curPos[0];
+    fichas["rojo"]["objeto"].position.z = curPos[1];*/
+
+}
+
+const move_pawn = (ficha, n, cambiar_turno) => {
+
+    const color = ficha.name.substring(ficha.name.indexOf("_")+1)
+    const pos_actual = fichas[color]["casillas"]["actual"]
+    if (pos_actual < 0) return
+
+    let destino = pos_actual
+    for (let i = 0; i < n; i++) {
+        if (destino == fichas[color]["casillas"]["entrada"]) {
+            fichas[color]["llegando_casa"] = true
+            destino = 0
+        } else if (fichas[color]["llegando_casa"]) {
+            destino++;
+            if (destino == pos_casa[color].length) {
+                valorDado = -1
+                if (cambiar_turno) {
+                    turno = (turno+1) % 4
+                    alert("Es turno de " + Object.keys(fichas)[turno])
+                }
+                return false;
+            }
+        } else {
+            destino = (destino+1) % pos.length
+        }
+    }
+
+    const pos_destino = fichas[color]["llegando_casa"] ? pos_casa[color][destino] : pos[destino]
+
+    gui.hide()
+    new TWEEN.Tween(pos_fichas[color])
+        .to({
+            x: [pos_destino[0]],
+            y: [y_suelo_fichas+20, y_suelo_fichas], 
+            z: [pos_destino[1]]
+        }, 100)
+        .interpolation(TWEEN.Interpolation.CatmullRom)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onComplete(() => {
+            fichas[color]["casillas"]["actual"] = destino
+            console.log("ficha ahora en " + destino)
+            gui.show()
+        })
+        .start()
+
+    valorDado = -1
+    if (cambiar_turno) {
+        turno = (turno+1) % 4
+        alert("Es turno de " + Object.keys(fichas)[turno])
+    }
+
+    return true;
 
 }
 
@@ -228,22 +394,39 @@ function addGui()
         giro_pinza: 0.0,
         separacion_pinza: 10.0,
         wireframe: false,
+        throw_dice: () => { 
+            valorDado = THREE.MathUtils.randInt(1, 6)
+            alert("Ha salido el valor " + valorDado)
+        },
+        move_pawn: () => move_pawn(fichas["azul"]["objeto"], 1, false),
         start_match: () => {
+
+            valorDado = -1
 
             for (const color in pos_fichas) {
                 new TWEEN.Tween(pos_fichas[color])
                 .to({
-                    x: [fichas[color]["pos_salida"].x],
+                    x: [pos[fichas[color]["casillas"]["salida"]][0]],
                     y: [y_suelo_fichas+20, y_suelo_fichas], 
-                    z: [fichas[color]["pos_salida"].z]
+                    z: [pos[fichas[color]["casillas"]["salida"]][1]]
                 }, 2000)
                 .interpolation(TWEEN.Interpolation.CatmullRom)
                 .easing(TWEEN.Easing.Quadratic.Out)
+                .onComplete(() => {
+                    // Se completan 4 animaciones
+                    fichas[color]["casillas"]["actual"] = fichas[color]["casillas"]["salida"]
+                    fichas[color]["llegando_casa"] = false
+                })
                 .start()
             }
 
+            turno = THREE.MathUtils.randInt(0, 3)
+            alert("Es turno de " + Object.keys(fichas)[turno])
+
         },
         end_match: () => {
+
+            valorDado = -1
 
             for (const color in pos_fichas) {
                 new TWEEN.Tween(pos_fichas[color])
@@ -254,15 +437,17 @@ function addGui()
                 }, 2000)
                 .interpolation(TWEEN.Interpolation.CatmullRom)
                 .easing(TWEEN.Easing.Quadratic.Out)
+                .onComplete(() => {
+                    fichas[color]["casillas"]["actual"] = -1
+                })
                 .start()
-                fichas[color]["casilla_actual"] = -1
             }
 
         }
 	};
 
 	// Creacion interfaz
-	const gui = new GUI({ title: "Control partida" });
+	gui = new GUI({ title: "Control partida" });
 
 	// Construccion del menu
     gui.add(movementController, "giro_base", -180.0, 180.0, 0.025)
@@ -288,8 +473,10 @@ function addGui()
         .onChange(value => {
             material.wireframe = value
         });
+    gui.add(movementController, "throw_dice").name("Tirar dado")
     gui.add(movementController, 'start_match' ).name("Comenzar partida");
     gui.add(movementController, 'end_match' ).name("Finalizar partida");
+    gui.add(movementController, 'move_pawn' ).name("Mover ficha");
 
     const folder = gui.addFolder( 'Position' );
     let elem = folder.add(movementController, "separacion_pinza", 0.0, 15.0, 0.025);
@@ -338,6 +525,32 @@ function render(time) {
     funcActualizacion(delta / 10)
     lastTimeMsec = time
 
+}
+
+function rayTracing(evento) {
+    // Capturar la posicion de doble click (S.R. top-left con Y down)
+    let x = evento.clientX;
+    let y = evento.clientY;
+
+    // Normalizar las coordenadas de click al cuadrado de 2x2
+
+    x = ( x / window.innerWidth ) * 2 - 1;
+    y = -( y / window.innerHeight ) * 2 + 1;
+
+    // Rayo e intersecciones
+    const rayo = new THREE.Raycaster();
+    rayo.setFromCamera(new THREE.Vector2(x,y), camera);
+
+    for (const color in fichas) {
+        const ficha = fichas[color]["objeto"]
+        if (!ficha) break;
+
+        const is = rayo.intersectObjects(ficha.children, true)
+        if (is.length > 0 && valorDado > 0 && color == Object.keys(fichas)[turno]) {
+            move_pawn(ficha, valorDado, true)
+        }
+    }
+        
 }
 
 // Listeners
