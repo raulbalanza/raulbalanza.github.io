@@ -12,7 +12,7 @@ let renderer, scene, camera;
 // Otras globales
 let robot, material, cameraControls, movementController;
 let dado, gui, valorDado = -1, turno = -1;
-const y_suelo_fichas = 24.3
+const y_suelo_fichas = 361.3
 const pos_casa = {
     "rojo": [[0, 92],
     [0, 84],
@@ -151,7 +151,7 @@ let funcActualizacion, lastTimeMsec = null;
 
 // Variables camara cenital
 let camaraCenital;
-const L = 100;
+const L = 110;
 
 function init() {
 
@@ -167,19 +167,19 @@ function init() {
 
     // Instanciar la camara
     const aspectRatio = window.innerWidth / window.innerHeight
-    camera = new THREE.PerspectiveCamera( 75, aspectRatio, 1, 1500 )
-    camera.position.set( 0, 230, 0 )
+    camera = new THREE.PerspectiveCamera( 75, aspectRatio, 1, 10000 )
+    camera.position.set( 0, 600, 0 )
 
     cameraControls = new OrbitControls(camera, renderer.domElement)
-    cameraControls.target.set(0, 120, 0)
-    camera.lookAt(0, 120, 0)
+    cameraControls.target.set(0, 340, 0)
+    camera.lookAt(0, 340, 0)
 
     // Limitar zoom
     //cameraControls.maxDistance = 500
     //cameraControls.minDistance = 30
 
-    camaraCenital = new THREE.OrthographicCamera( -L, L, L, -L, 10, 400 );
-    camaraCenital.position.set(0,L*3,0)
+    camaraCenital = new THREE.OrthographicCamera( -L, L, L, -L, 10, 1000 );
+    camaraCenital.position.set(0,400,0)
     camaraCenital.lookAt(0,0,0)
     camaraCenital.up = new THREE.Vector3(0,0,-1)
 
@@ -217,9 +217,13 @@ function init() {
 
 function loadScene() {
 
+    const grassTexture = new THREE.TextureLoader().load("images/grass_128.jpg")
+    grassTexture.repeat.set(12, 12)
+    grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping
+
     material = new THREE.MeshBasicMaterial({
-        color: "yellow",
-        wireframe: true
+        color: 0xFFFFFF,
+        map: grassTexture
     })
 
     /*material = new THREE.MeshNormalMaterial({
@@ -230,22 +234,31 @@ function loadScene() {
     const ambientLight = new THREE.AmbientLight(0xffffff);
     scene.add( ambientLight ); 
     const luz1 = new THREE.PointLight(0xFFFFFF, 0.5);
-    luz1.position.set(0, 160, 0);
+    luz1.position.set(0, 500, 0);
     scene.add( luz1 );
     const luz2 = new THREE.PointLight(0xFFFFFF, 0.2);
-    luz2.position.set(0, 250, -50);
+    luz2.position.set(0, 500, -50);
     scene.add( luz2 );
     const luz3 = new THREE.PointLight(0xFFFFFF, 0.2);
-    luz3.position.set(0, 250, 50);
+    luz3.position.set(0, 500, 50);
     scene.add( luz3 );
 
     // Suelo (perpendicular a eje Z por defecto)
-    const suelo = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000, 10, 10), material)
+    const suelo = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 10, 10), material)
     suelo.rotateX(-Math.PI/2)
     scene.add(suelo)
 
+    // Base de ladrillo
+    const brickTexture = new THREE.TextureLoader().load("images/brick_225.jpg")
+    brickTexture.repeat.set(4, 4)
+    brickTexture.wrapS = brickTexture.wrapT = THREE.RepeatWrapping
+    const brickMaterial = new THREE.MeshBasicMaterial({color: 0xFFFFFF, map: brickTexture})
+
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(600, 600, 10, 20), brickMaterial)
+    scene.add(base)
+
     // Helper de ejes
-    scene.add(new THREE.AxesHelper(100))
+    //scene.add(new THREE.AxesHelper(100))
 
     // Cargar tablero
     const colladaLoader = new ColladaLoader();
@@ -253,6 +266,11 @@ function loadScene() {
 
     // Cargar dado y fichas
     const gltfLoader = new GLTFLoader();
+    gltfLoader.load('models/metallic_garden_table.glb', (objeto) => {
+        objeto.scene.scale.set(10, 10, 10)
+        scene.add(objeto.scene)
+        console.log(objeto.scene.scale)
+    })
     gltfLoader.load('models/dado/scene.gltf', add_dice);
     gltfLoader.load('models/ficha.glb', add_pawns);
 
@@ -285,7 +303,7 @@ const add_board = (objeto) => {
     }
 
     tablero.scale.set(10, 10, 10)
-    tablero.position.set(-110,0,452)
+    tablero.position.set(-110,337,452)
     scene.add(tablero);
    
 }
@@ -294,7 +312,7 @@ const add_dice = (objeto) => {
 
     dado = objeto.scene
     objeto.scene.scale.set(1000,1000,1000);
-    objeto.scene.position.y = 25.9;
+    objeto.scene.position.y = 363;
     objeto.scene.name = 'dado';
     scene.add(dado);
 
