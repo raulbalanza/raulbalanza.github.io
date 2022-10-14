@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>GPC - Proyecto final</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <style>
         body {
             background-color: white;
@@ -25,6 +26,21 @@
 
     <div id="info" style="margin-bottom: 15px;">
         <h2>Proyecto final<br>Ra&uacute;l Balanz&aacute;</h2>
+    
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+            <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="toast-header">
+                <img src="https://play-lh.googleusercontent.com/ky4XuKxfBiene7xFLcDpKXCOKxekLvLSNYsIQFRYLXx2-KTq0TmxWRz3mvUWxmgFfAk" width="16" class="rounded me-2" alt="...">
+                <strong class="me-auto">Parch&iacute;s</strong>
+                <small>Turno: <span style="color: blue; font-weight: bold;">Azul</span></small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+              <div class="toast-body">
+                ¡Ha salido un 6! Haz click en la ficha para moverla.
+              </div>
+            </div>
+          </div>
+    
     </div>
 
     <!-- Scripts de biblioteca y app -->

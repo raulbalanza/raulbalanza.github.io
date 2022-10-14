@@ -121,24 +121,28 @@ const pos = [
 const pos_fichas = {}
 const fichas = {
     "rojo": {
+        "camara": {x: 0, y: 524, z: 181},
         "pos_inicial": {x: 70, z: 70},
         "color": {r: 200, g: 0, b: 0},
         "casillas": {actual: -1, salida: 0, entrada: 63},
         "llegando_casa": false
     },
     "azul": {
+        "camara": {x: 177, y: 528, z: 0},
         "pos_inicial": {x: 70, z: -70},
         "color": {r: 0, g: 0, b: 200},
         "casillas": {actual: -1, salida: 17, entrada: 12},
         "llegando_casa": false
     },
     "amarillo": {
+        "camara": {x: 0, y: 531, z: -172},
         "pos_inicial": {x: -70, z: -70},
         "color": {r: 200, g: 200, b: 0},
         "casillas": {actual: -1, salida: 34, entrada: 29},
         "llegando_casa": false
     },
     "verde": {
+        "camara": {x: -173, y: 529, z: 0},
         "pos_inicial": {x: -70, z: 70},
         "color": {r: 0, g: 150, b: 0},
         "casillas": {actual: -1, salida: 51, entrada: 46},
@@ -153,6 +157,45 @@ let funcActualizacion, lastTimeMsec = null;
 let camaraCenital;
 const L = 110;
 
+function showToast(timeout) {
+
+    const toast = document.getElementById("liveToast")
+
+    toast.classList.remove("hide")
+    toast.classList.add("show")
+
+    toast.style.opacity = 0;
+    let opacidad = {valor: 0}
+
+    new TWEEN.Tween(opacidad)
+        .to({valor: [1]}, 500)
+        .onUpdate((value) => { toast.style.opacity = value["valor"] })
+        .onComplete(() => {
+            if (timeout) {
+                setTimeout(() => { hideToast() }, timeout)
+            }
+        })
+        .start()
+
+}
+
+function hideToast() {
+
+    const toast = document.getElementById("liveToast")
+
+    let opacidad = {valor: 1}
+
+    new TWEEN.Tween(opacidad)
+        .to({valor: [0]}, 500)
+        .onUpdate((value) => { toast.style.opacity = value["valor"] })
+        .onComplete(() => {
+            toast.classList.remove("show")
+            toast.classList.add("hide")
+        })
+        .start()
+
+}
+
 function init() {
 
     // Instanciar el motor
@@ -162,13 +205,18 @@ function init() {
     document.getElementById("container").appendChild(renderer.domElement)
     renderer.autoClear = false
 
+    setTimeout(() => {
+        showToast(1000)
+    }, 2000)
+
     // Instanciar la escena
     scene = new THREE.Scene()
 
     // Instanciar la camara
     const aspectRatio = window.innerWidth / window.innerHeight
     camera = new THREE.PerspectiveCamera( 75, aspectRatio, 1, 10000 )
-    camera.position.set( 0, 600, 0 )
+    //camera.position.set( 0, 600, 0 )
+    camera.position.set( -350, 800, 350 )
 
     cameraControls = new OrbitControls(camera, renderer.domElement)
     cameraControls.target.set(0, 340, 0)
@@ -269,7 +317,45 @@ function loadScene() {
     gltfLoader.load('models/metallic_garden_table.glb', (objeto) => {
         objeto.scene.scale.set(10, 10, 10)
         scene.add(objeto.scene)
-        console.log(objeto.scene.scale)
+    })
+    gltfLoader.load('models/jugadores.glb', (objeto) => {
+
+        let i = 4
+        while (i--) {
+            const personaje = objeto.scene.children[0].children[0].children[0]
+            const object3d = new THREE.Object3D()
+            object3d.rotation.x = -Math.PI/2
+            object3d.scale.set(15, 15, 15)
+            object3d.add(personaje)
+
+            switch (personaje.name) {
+
+                case "Object_2":
+                    object3d.position.set(240,205,-155)
+                    object3d.rotation.z = -Math.PI/2
+                    fichas["azul"]["personaje"] = object3d
+                    break
+                case "Object_3":
+                    object3d.position.set(-240,205,-155)
+                    object3d.rotation.z = Math.PI/2
+                    fichas["verde"]["personaje"] = object3d
+                    break
+                case "Object_4":
+                    object3d.position.set(-465,205,250)
+                    object3d.rotation.z = Math.PI
+                    fichas["rojo"]["personaje"] = object3d
+                    break
+                case "Object_5":
+                    object3d.position.set(-465,205,-250)
+                    object3d.rotation.z = Math.PI*2
+                    fichas["amarillo"]["personaje"] = object3d
+                    break
+
+            }
+
+            scene.add(object3d)
+        }
+        
     })
     gltfLoader.load('models/dado/scene.gltf', add_dice);
     gltfLoader.load('models/ficha.glb', add_pawns);
@@ -439,7 +525,22 @@ function addGui()
             }
 
             turno = THREE.MathUtils.randInt(0, 3)
-            alert("Es turno de " + Object.keys(fichas)[turno])
+            
+            new TWEEN.Tween(camera.position)
+                .to({
+                    x: [fichas[Object.keys(fichas)[turno]]["camara"].x],
+                    y: [fichas[Object.keys(fichas)[turno]]["camara"].y], 
+                    z: [fichas[Object.keys(fichas)[turno]]["camara"].z]
+                }, 2000)
+                .interpolation(TWEEN.Interpolation.CatmullRom)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onUpdate(pos => {
+                    cameraControls.target.set(0, 340, 0)
+                    camera.lookAt(0, 340, 0)
+                })
+                .start()
+
+            //alert("Es turno de " + Object.keys(fichas)[turno])
 
         },
         end_match: () => {
@@ -505,6 +606,8 @@ function addGui()
 }
 
 const update = () => {
+
+    //console.log(camera.position)
 
     // Actualizar variables del menu
     for (const color in fichas) {
