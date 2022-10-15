@@ -10,13 +10,15 @@
             margin: 0px;
             overflow: hidden;
         }
-        #info {
+        #footer {
             position: absolute;
-            bottom: 0px;
-            left: 50px;
-            width: 30%;
+            bottom: 0;
+            width: 100%;
             text-align: left;
-            z-index: 1;
+            margin: 10px 10px 10px 10px;
+            font-weight: bold;
+            pointer-events: none;
+            color: lightgray;
         }
     </style>
 </head>
@@ -24,24 +26,21 @@
     <!-- Contenedor de la app -->
     <div id="container"></div>
 
-    <div id="info" style="margin-bottom: 15px;">
-        <h2>Proyecto final<br>Ra&uacute;l Balanz&aacute;</h2>
-    
-        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-            <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
-              <div class="toast-header">
-                <img src="https://play-lh.googleusercontent.com/ky4XuKxfBiene7xFLcDpKXCOKxekLvLSNYsIQFRYLXx2-KTq0TmxWRz3mvUWxmgFfAk" width="16" class="rounded me-2" alt="...">
-                <strong class="me-auto">Parch&iacute;s</strong>
-                <small>Turno: <span style="color: blue; font-weight: bold;">Azul</span></small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-              </div>
-              <div class="toast-body">
-                ¡Ha salido un 6! Haz click en la ficha para moverla.
-              </div>
-            </div>
-          </div>
-    
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+      <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+          <img src="./images/parchis_icon.png" width="16" class="rounded me-2" alt="...">
+          <strong class="me-auto">Parch&iacute;s</strong>
+          <small id="turnText">-</small>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close" id="closeToast"></button>
+        </div>
+        <div class="toast-body" id="mainToastText">
+          -
+        </div>
+      </div>
     </div>
+
+    <div id="footer">Parch&iacute;s - GPC - Ra&uacute;l Balanz&aacute; Garc&iacute;a</div>
 
     <!-- Scripts de biblioteca y app -->
     <script type="importmap">
