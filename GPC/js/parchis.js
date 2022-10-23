@@ -19,13 +19,15 @@ import Stats from "../lib/stats.module.js"
 
 // Modulos propios
 import { loadAll, capybaras } from "./cargarModelos.js"
-import { pos_casa, pos, y_suelo_fichas, y_suelo_personajes } from "./constantes.js"
+import { pos_casa, pos, y_suelo_fichas, y_suelo_personajes, creditsText } from "./constantes.js"
+import { showToast, hideToast } from "./gestorMensajes.js"
 
 // Variables de consenso
 let renderer, scene, camera;
 
 // Otras globales
-let robot, material, cameraControls, movementController, stats, world, dado, dadoFisico;
+let material, cameraControls, movementController, stats, world, dado;
+let dadoFisico, sueloFisicoTablero = null;
 let gui, valorDado = -1, turno = -1, lanzandoDado = false;
 let guiControls = {}
 const imageBasePath = "./images/"
@@ -36,180 +38,39 @@ const fichas = {
     "rojo": {
         "camara": {x: 0, y: 524, z: 181},
         "pos_inicial": {x: 70, z: 70},
-        "color": {r: 200, g: 0, b: 0},
+        "color": {r: 235, g: 77, b: 75},
         "casillas": {actual: -1, salida: 0, entrada: 63},
         "llegando_casa": false
     },
     "azul": {
         "camara": {x: 177, y: 528, z: 0},
         "pos_inicial": {x: 70, z: -70},
-        "color": {r: 0, g: 0, b: 200},
+        "color": {r: 104, g: 109, b: 224},
         "casillas": {actual: -1, salida: 17, entrada: 12},
         "llegando_casa": false
     },
     "amarillo": {
         "camara": {x: 0, y: 531, z: -172},
         "pos_inicial": {x: -70, z: -70},
-        "color": {r: 200, g: 200, b: 0},
+        "color": {r: 249, g: 202, b: 36},
         "casillas": {actual: -1, salida: 34, entrada: 29},
         "llegando_casa": false
     },
     "verde": {
         "camara": {x: -173, y: 529, z: 0},
         "pos_inicial": {x: -70, z: 70},
-        "color": {r: 0, g: 150, b: 0},
+        "color": {r: 106, g: 176, b: 76},
         "casillas": {actual: -1, salida: 51, entrada: 46},
         "llegando_casa": false
     }
 }
 
 let funcActualizacion, lastTimeMsec = null;
-let toastTimeout = null;
 let matchStartTime = null;
 
 // Variables camara cenital
 let camaraCenital;
 const L = 110;
-
-function showToast(message, turn, timeout) {
-
-    if (toastTimeout) { 
-        clearTimeout(toastTimeout); 
-        toastTimeout = null;
-    }
-
-    const toast = document.getElementById("liveToast")
-    document.getElementById("mainToastText").innerHTML = message
-
-    const turnText = document.getElementById("turnText")
-    switch (turn) {        
-
-        case 0: // Rojo
-            turnText.innerHTML = 'Turno: <span style="color: red; font-weight: bold;">Rojo</span>'
-            break
-        case 1: // Azul
-            turnText.innerHTML = 'Turno: <span style="color: blue; font-weight: bold;">Azul</span>'
-            break
-        case 2: // Amarillo
-            turnText.innerHTML = 'Turno: <span style="color: #FFBF00; font-weight: bold;">Amarillo</span>'
-            break
-        case 3: // Verde
-            turnText.innerHTML = 'Turno: <span style="color: green; font-weight: bold;">Verde</span>'
-            break
-
-    }
-
-    toast.classList.remove("hide")
-    toast.classList.add("show")
-
-    toast.style.opacity = 0;
-    let opacidad = {valor: 0}
-
-    new TWEEN.Tween(opacidad)
-        .to({valor: [1]}, 500)
-        .onUpdate((value) => { toast.style.opacity = value["valor"] })
-        .onComplete(() => {
-            if (timeout) {
-                toastTimeout = setTimeout(() => { hideToast() }, timeout)
-            }
-        })
-        .start()
-
-}
-
-function hideToast() {
-
-    const toast = document.getElementById("liveToast")
-
-    let opacidad = {valor: 1}
-
-    new TWEEN.Tween(opacidad)
-        .to({valor: [0]}, 500)
-        .onUpdate((value) => { toast.style.opacity = value["valor"] })
-        .onComplete(() => {
-            toast.classList.remove("show")
-            toast.classList.add("hide")
-        })
-        .start()
-
-}
-
-let sueloFisicoTablero = null;
-
-function addPhysicalWorld() {
-
-    world = new CANNON.World({
-        gravity: new CANNON.Vec3(0, -900.81, 0)
-    })
-
-    sueloFisicoTablero = new CANNON.Body({ 
-        shape: new CANNON.Plane(),
-        type: CANNON.Body.STATIC 
-    });
-    sueloFisicoTablero.quaternion.setFromAxisAngle(
-        new CANNON.Vec3(1,0,0), -Math.PI/2
-    );
-    sueloFisicoTablero.position.y = 337 + 15
-    world.addBody(sueloFisicoTablero);
-
-    sueloFisicoTablero.addEventListener('collide', (e) => { 
-        dado.visible = true
-        if (e.body.id != 1 || !lanzandoDado) return
-
-        setTimeout(() => {
-
-            const diceRotation = dado.rotation
-            const r = {
-                x: (Math.trunc(diceRotation._x*100)/100), 
-                y: (Math.trunc(diceRotation._y*100)/100), 
-                z: (Math.trunc(diceRotation._z*100)/100)
-            }
-            
-            console.log(r)
-
-            console.log(Math.abs(r.x - (-Math.PI/2)), Math.abs(r.y))
-            console.log(Math.abs(r.x - (Math.PI/2)), Math.abs(r.y))
-            console.log(Math.abs(r.x - (Math.PI/2)), Math.abs(r.x))
-            console.log(Math.abs(r.x - Math.PI), Math.abs(r.z))
-
-            if (Math.abs(r.x - (-Math.PI/2)) < 0.01 && Math.abs(r.y) < 0.01) { valorDado = 2 }
-            else if (Math.abs(r.x - (Math.PI/2)) < 0.01 && Math.abs(r.y) < 0.01) { valorDado = 1 }
-            else if (
-                (Math.abs(r.z - (Math.PI/2)) < 0.01 && Math.abs(r.x) < 0.01) ||
-                (Math.abs(r.x - Math.PI) < 0.01 && Math.abs(r.z - (-Math.PI/2)) < 0.01)
-            ) { valorDado = 4 }
-            else if (
-                (Math.abs(r.x - Math.PI) < 0.01 && Math.abs(r.z) < 0.01) || 
-                (Math.abs(r.z - Math.PI) < 0.01 && Math.abs(r.x) < 0.01) ||
-                (Math.abs(r.z - (-Math.PI)) < 0.01 && Math.abs(r.x) < 0.01)
-            ) { valorDado = 5 }
-            else if (
-                (Math.abs(r.x) < 0.01 && Math.abs(r.z) < 0.01) ||
-                (Math.abs(r.x - Math.PI) < 0.01 && Math.abs(r.z - (-Math.PI)) < 0.01) || 
-                (Math.abs(r.x - Math.PI) < 0.01 && Math.abs(r.z - Math.PI) < 0.01)
-            ) { valorDado = 6 }
-            else { valorDado = 3 }
-
-            lanzandoDado = false
-            showToast("Ha salido el valor <b>" + valorDado  + "</b>.<br>Haz doble click en tu ficha para moverla.", turno, 2000)
-
-        }, 2000)
-
-    })
-
-    dadoFisico = new CANNON.Body({ 
-        shape: new CANNON.Box(new CANNON.Vec3(21.5, 21.5, 21.5)),
-        position: new CANNON.Vec3(0, 800, 0),
-        mass: 100,
-    });
-
-    world.addBody(dadoFisico);
-
-    dadoFisico.linearDamping = 0.999
-    dadoFisico.angularDamping = 0.999
-    dadoFisico.angularVelocity.set(1000, 1000, 1000)
-
-}
 
 function init() {
 
@@ -237,16 +98,14 @@ function init() {
     const aspectRatio = window.innerWidth / window.innerHeight
     camera = new THREE.PerspectiveCamera( 75, aspectRatio, 1, 10000 )
     camera.position.set( -650, 900, 650 )
-    //camera.position.set( -65, 355, 65 )
-    //camera.position.set( -200, 455, 200 )
 
     cameraControls = new OrbitControls(camera, renderer.domElement)
     cameraControls.target.set(0, 340, 0)
     camera.lookAt(0, 340, 0)
 
     // Limitar zoom
-    //cameraControls.maxDistance = 500
-    //cameraControls.minDistance = 30
+    cameraControls.maxDistance = 2500
+    cameraControls.minDistance = 80
 
     camaraCenital = new THREE.OrthographicCamera( -L, L, L, -L, 10, 1000 );
     camaraCenital.position.set(0,400,0)
@@ -258,29 +117,21 @@ function init() {
 	renderer.domElement.focus();
 
     funcActualizacion = (delta) => {
-		if (keyboard.pressed('left')) {
-			robot.position.z -= 1 * delta;		
-		} else if (keyboard.pressed('right')) {
-			robot.position.z += 1 * delta;
+		if (keyboard.pressed('a') || keyboard.pressed('left')) {
+			camera.position.z -= 5 * delta;		
+		} else if (keyboard.pressed('d') || keyboard.pressed('right')) {
+			camera.position.z += 5 * delta;
 		}
-		if (keyboard.pressed('down')) {
-			robot.position.x -= 1 * delta;		
-		} else if (keyboard.pressed('up')) {
-			robot.position.x += 1 * delta;		
-		}
+		if (keyboard.pressed('s') || keyboard.pressed('down')) {
+			camera.position.x -= 5 * delta;		
+		} else if (keyboard.pressed('w') || keyboard.pressed('up')) {
+			camera.position.x += 5 * delta;		
+        }
 	}
 
-    // Manejador de cambio de dimensiones de ventana
+    // Manejadores de eventos
     window.addEventListener("resize", windowResize)
-
-    document.getElementById("closeToast").addEventListener("click", () => {
-        if (toastTimeout) {
-            clearTimeout(toastTimeout)
-            toastTimeout = null
-        }
-        hideToast()
-    })
-
+    document.getElementById("closeToast").addEventListener("click", () => { hideToast() })
     renderer.domElement.addEventListener('dblclick', rayTracing);
 
     for (const color in fichas) {
@@ -381,12 +232,88 @@ function loadScene() {
 
 }
 
-const switch_turn = () => {
+function addPhysicalWorld() {
+
+    world = new CANNON.World({
+        gravity: new CANNON.Vec3(0, -900.81, 0)
+    })
+
+    sueloFisicoTablero = new CANNON.Body({ 
+        shape: new CANNON.Plane(),
+        type: CANNON.Body.STATIC 
+    });
+    sueloFisicoTablero.quaternion.setFromAxisAngle(
+        new CANNON.Vec3(1,0,0), -Math.PI/2
+    );
+    sueloFisicoTablero.position.y = 337 + 15
+    world.addBody(sueloFisicoTablero);
+
+    sueloFisicoTablero.addEventListener('collide', diceResult)
+
+    dadoFisico = new CANNON.Body({ 
+        shape: new CANNON.Box(new CANNON.Vec3(21.5, 21.5, 21.5)),
+        position: new CANNON.Vec3(0, 800, 0),
+        mass: 100,
+    });
+
+    world.addBody(dadoFisico);
+
+    dadoFisico.linearDamping = 0.999
+    dadoFisico.angularDamping = 0.999
+    dadoFisico.angularVelocity.set(1000, 1000, 1000)
+
+}
+
+function diceResult(e) { 
+    dado.visible = true
+    if (e.body.id != 1 || !lanzandoDado) return
+
+    setTimeout(() => {
+
+        const diceRotation = dado.rotation
+        const r = {
+            x: (Math.trunc(diceRotation._x*100)/100), 
+            y: (Math.trunc(diceRotation._y*100)/100), 
+            z: (Math.trunc(diceRotation._z*100)/100)
+        }
+        
+        /*console.log(r)
+
+        console.log(Math.abs(r.x - (-Math.PI/2)), Math.abs(r.y))
+        console.log(Math.abs(r.x - (Math.PI/2)), Math.abs(r.y))
+        console.log(Math.abs(r.x - (Math.PI/2)), Math.abs(r.x))
+        console.log(Math.abs(r.x - Math.PI), Math.abs(r.z))*/
+
+        if (Math.abs(r.x - (-Math.PI/2)) < 0.01 && Math.abs(r.y) < 0.01) { valorDado = 2 }
+        else if (Math.abs(r.x - (Math.PI/2)) < 0.01 && Math.abs(r.y) < 0.01) { valorDado = 1 }
+        else if (
+            (Math.abs(r.z - (Math.PI/2)) < 0.01 && Math.abs(r.x) < 0.01) ||
+            (Math.abs(r.x - Math.PI) < 0.01 && Math.abs(r.z - (-Math.PI/2)) < 0.01)
+        ) { valorDado = 4 }
+        else if (
+            (Math.abs(r.x - Math.PI) < 0.01 && Math.abs(r.z) < 0.01) || 
+            (Math.abs(r.z - Math.PI) < 0.01 && Math.abs(r.x) < 0.01) ||
+            (Math.abs(r.z - (-Math.PI)) < 0.01 && Math.abs(r.x) < 0.01)
+        ) { valorDado = 5 }
+        else if (
+            (Math.abs(r.x) < 0.01 && Math.abs(r.z) < 0.01) ||
+            (Math.abs(r.x - Math.PI) < 0.01 && Math.abs(r.z - (-Math.PI)) < 0.01) || 
+            (Math.abs(r.x - Math.PI) < 0.01 && Math.abs(r.z - Math.PI) < 0.01)
+        ) { valorDado = 6 }
+        else { valorDado = 3 }
+
+        lanzandoDado = false
+        showToast("Ha salido el valor <b>" + valorDado  + "</b>.<br>Haz doble click en tu ficha para moverla.", turno, 2000)
+
+    }, 2000)
+}
+
+function switchTurn() {
 
     setTimeout(() => {
 
         turno = (turno+1) % 4
-        showToast("Es turno de <b>" + Object.keys(fichas)[turno] + "</b>.", turno, 2000)
+        showToast("Es turno de <b>" + Object.keys(fichas)[turno] + "</b>. ¡Tira el dado!", turno, 2000)
         new TWEEN.Tween(camera.position)
             .to({
                 x: [fichas[Object.keys(fichas)[turno]]["camara"].x],
@@ -408,7 +335,7 @@ const switch_turn = () => {
 
 }
 
-const move_pawn = (ficha, n, cambiar_turno) => {
+function movePawn(ficha, n, cambiar_turno) {
 
     const color = ficha.name.substring(ficha.name.indexOf("_")+1)
     const pos_actual = fichas[color]["casillas"]["actual"]
@@ -416,7 +343,7 @@ const move_pawn = (ficha, n, cambiar_turno) => {
     if (pos_actual < 0) {
         if (valorDado != 5) {
             showToast("Necesitas sacar un <b>5</b> para salir de casa.<br>No puedes salir ahora.", 2000)
-            if (cambiar_turno) switch_turn()
+            if (cambiar_turno) switchTurn()
             return
         }
 
@@ -430,7 +357,7 @@ const move_pawn = (ficha, n, cambiar_turno) => {
         }
         if (fichaEnSalida) {
             showToast("Ya hay una ficha en tu casilla de salida.<br>No puedes salir ahora.", 2000)
-            if (cambiar_turno) switch_turn()
+            if (cambiar_turno) switchTurn()
             return false;
         }
         
@@ -445,7 +372,7 @@ const move_pawn = (ficha, n, cambiar_turno) => {
             .onComplete(() => {
                 fichas[color]["casillas"]["actual"] = fichas[color]["casillas"]["salida"]
                 fichas[color]["llegando_casa"] = false
-                if (cambiar_turno) switch_turn()
+                if (cambiar_turno) switchTurn()
             })
             .start()
         return true
@@ -460,8 +387,8 @@ const move_pawn = (ficha, n, cambiar_turno) => {
             destino++;
             if (destino == pos_casa[color].length) {
                 valorDado = -1
-                showToast("El movimiento se sale del tablero.<br>No puedes mover.")
-                if (cambiar_turno) switch_turn()
+                showToast("El movimiento se sale del tablero.<br>No puedes mover.", 2000)
+                if (cambiar_turno) switchTurn()
                 return false;
             }
         } else {
@@ -490,7 +417,7 @@ const move_pawn = (ficha, n, cambiar_turno) => {
         let noPuedeMover = destinoEsSeguro && fichaEnDestino;
         if (noPuedeMover) {
             showToast("Ya hay una ficha en la casilla segura de destino.<br>No puedes mover.", 2000)
-            if (cambiar_turno) switch_turn() 
+            if (cambiar_turno) switchTurn() 
             return false;
         }
 
@@ -512,7 +439,7 @@ const move_pawn = (ficha, n, cambiar_turno) => {
             gui.show()
             if (haGanado) setTimeout(() => winSequence(), 2000)
             else if (comeFicha) pawnGoHome(fichaEnDestino)
-            else if (cambiar_turno) switch_turn()
+            else if (cambiar_turno) switchTurn()
         })
         .start()
 
@@ -546,38 +473,19 @@ function winSequence() {
     const color = Object.keys(fichas)[turno];
 
     const winnerPosition = {
-        cam_pos: {},
-        look_pos: {}
-    }
-
-    switch (color) {
-
-        case "rojo":
-            winnerPosition.cam_pos[color] = {x: 0, y: 800, z: -700}
-            winnerPosition.look_pos[color] = {x: 0, y: 430, z: 0}
-            break;
-        case "verde":
-            winnerPosition.cam_pos[color] = {x: 700, y: 800, z: 0}
-            winnerPosition.look_pos[color] = {x: 0, y: 430, z: 0}
-            break;
-        case "amarillo":
-            winnerPosition.cam_pos[color] = {x: 0, y: 800, z: 700}
-            winnerPosition.look_pos[color] = {x: 0, y: 430, z: 0}
-            break;
-        case "azul":
-            winnerPosition.cam_pos[color] = {x: -700, y: 800, z: 0}
-            winnerPosition.look_pos[color] = {x: 0, y: 430, z: 0}
-            break;
-
+        "rojo": {x: 0, y: 800, z: -700},
+        "verde": {x: 700, y: 800, z: 0},
+        "amarillo": {x: 0, y: 800, z: 700},
+        "azul": {x: -700, y: 800, z: 0}
     }
 
     showToast("El color <b>" + color + "</b> ha ganado la partida!", 4000)
 
     new TWEEN.Tween(camera.position)
         .to({
-            x: [winnerPosition.cam_pos[color].x],
-            y: [winnerPosition.cam_pos[color].y], 
-            z: [winnerPosition.cam_pos[color].z]
+            x: [winnerPosition[color].x],
+            y: [winnerPosition[color].y], 
+            z: [winnerPosition[color].z]
         }, 2000)
         .interpolation(TWEEN.Interpolation.CatmullRom)
         .easing(TWEEN.Easing.Quadratic.Out)
@@ -591,7 +499,7 @@ function winSequence() {
                 .interpolation(TWEEN.Interpolation.CatmullRom)
                 .easing(TWEEN.Easing.Quadratic.Out)
                 .onComplete(() => {
-                    setTimeout(() => { end_match() }, 1000)
+                    setTimeout(() => { endMatch() }, 1000)
                 })
                 .start()
         })
@@ -599,7 +507,7 @@ function winSequence() {
 
 }
 
-function end_match() {
+function endMatch() {
 
     matchStartTime = null
     guiControls["finish"].disable()
@@ -640,81 +548,85 @@ function end_match() {
 
 }
 
+function startMatch() {
+
+    guiControls["start"].disable()
+    valorDado = -1
+
+    for (const color in pos_fichas) {
+        new TWEEN.Tween(pos_fichas[color])
+        .to({
+            x: [pos[fichas[color]["casillas"]["salida"]][0]],
+            y: [y_suelo_fichas+20, y_suelo_fichas], 
+            z: [pos[fichas[color]["casillas"]["salida"]][1]]
+        }, 2000)
+        .interpolation(TWEEN.Interpolation.CatmullRom)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onComplete(() => {
+            // Se completan 4 animaciones
+            fichas[color]["casillas"]["actual"] = fichas[color]["casillas"]["salida"]
+            fichas[color]["llegando_casa"] = false
+        })
+        .start()
+    }
+
+    turno = THREE.MathUtils.randInt(0, 3)
+    
+    new TWEEN.Tween(camera.position)
+        .to({
+            x: [fichas[Object.keys(fichas)[turno]]["camara"].x],
+            y: [fichas[Object.keys(fichas)[turno]]["camara"].y], 
+            z: [fichas[Object.keys(fichas)[turno]]["camara"].z]
+        }, 2000)
+        .interpolation(TWEEN.Interpolation.CatmullRom)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onUpdate(pos => {
+            cameraControls.target.set(0, 340, 0)
+            camera.lookAt(0, 340, 0)
+        })
+        .onComplete(() => {
+            guiControls["finish"].enable()
+            guiControls["dice"].enable()
+            matchStartTime = new Date()
+        })
+        .start()
+
+    showToast("Empieza la partida.<br>Es turno de <b>" + Object.keys(fichas)[turno] + "</b>. ¡Tira el dado!", turno, 2000)
+
+}
+
+function throwDice() {
+    guiControls["dice"].disable()
+    dadoFisico.quaternion.set(
+        THREE.MathUtils.randFloat(-1, 1), 
+        THREE.MathUtils.randFloat(-1, 1), 
+        THREE.MathUtils.randFloat(-1, 1), 
+        THREE.MathUtils.randFloat(-1, 1)
+    )
+    lanzandoDado = true
+    dadoFisico.position.x = 0
+    dadoFisico.position.y = 800
+    dadoFisico.position.z = 0
+}
+
 function addGui() {
 
 	// Definicion de los controles
 	movementController = {
         match_duration: "",
         time: "",
-        throw_dice: () => {
-            guiControls["dice"].disable()
-            dadoFisico.quaternion.set(
-                THREE.MathUtils.randFloat(-1, 1), 
-                THREE.MathUtils.randFloat(-1, 1), 
-                THREE.MathUtils.randFloat(-1, 1), 
-                THREE.MathUtils.randFloat(-1, 1)
-            )
-            lanzandoDado = true
-            dadoFisico.position.y = 800
+        throw_dice: () => { throwDice() },
+        start_match: () => { startMatch() },
+        credits: () => { alert(creditsText) },
+        end_match: () => {
+            if (!confirm("¿Seguro que quieres finalizar la partida?")) return
+            endMatch()
         },
-        move_pawn: () => { 
-            move_pawn(fichas["rojo"]["objeto"], 1, false) 
+        move_pawn: () => { // DEBUG
+            movePawn(fichas["rojo"]["objeto"], 1, false) 
             setTimeout(() => console.log(fichas["rojo"]["casillas"], pos[fichas["rojo"]["casillas"]["actual"]].length), 200)
         },
-        start_match: () => {
-
-            guiControls["start"].disable()
-            valorDado = -1
-
-            for (const color in pos_fichas) {
-                new TWEEN.Tween(pos_fichas[color])
-                .to({
-                    x: [pos[fichas[color]["casillas"]["salida"]][0]],
-                    y: [y_suelo_fichas+20, y_suelo_fichas], 
-                    z: [pos[fichas[color]["casillas"]["salida"]][1]]
-                }, 2000)
-                .interpolation(TWEEN.Interpolation.CatmullRom)
-                .easing(TWEEN.Easing.Quadratic.Out)
-                .onComplete(() => {
-                    // Se completan 4 animaciones
-                    fichas[color]["casillas"]["actual"] = fichas[color]["casillas"]["salida"]
-                    fichas[color]["llegando_casa"] = false
-                })
-                .start()
-            }
-
-            turno = THREE.MathUtils.randInt(0, 3)
-            
-            new TWEEN.Tween(camera.position)
-                .to({
-                    x: [fichas[Object.keys(fichas)[turno]]["camara"].x],
-                    y: [fichas[Object.keys(fichas)[turno]]["camara"].y], 
-                    z: [fichas[Object.keys(fichas)[turno]]["camara"].z]
-                }, 2000)
-                .interpolation(TWEEN.Interpolation.CatmullRom)
-                .easing(TWEEN.Easing.Quadratic.Out)
-                .onUpdate(pos => {
-                    cameraControls.target.set(0, 340, 0)
-                    camera.lookAt(0, 340, 0)
-                })
-                .onComplete(() => {
-                    guiControls["finish"].enable()
-                    guiControls["dice"].enable()
-                    matchStartTime = new Date()
-                })
-                .start()
-
-            showToast("¡Empieza la partida!<br>Es turno de <b>" + Object.keys(fichas)[turno] + "</b>.", turno, 2000)
-
-        },
-        end_match_button: () => {
-            if (!confirm("¿Seguro que quieres finalizar la partida?")) return
-            end_match()
-        },
-        credits: () => {
-            alert("hey")
-        },
-        winSeq: () => {winSequence()}
+        winSeq: () => { winSequence() } // DEBUG
 	};
 
 	// Creacion interfaz
@@ -723,9 +635,10 @@ function addGui() {
 	// Construccion del menu
     guiControls["dice"] = gui.add(movementController, "throw_dice").name("Tirar dado").disable()
     guiControls["start"] = gui.add(movementController, 'start_match' ).name("Comenzar partida");
-    guiControls["finish"] = gui.add(movementController, 'end_match_button' ).name("Finalizar partida").disable();
-    //gui.add(movementController, 'move_pawn' ).name("Mover ficha");
-    //gui.add(movementController, 'winSeq' ).name("Win sequence");
+    guiControls["finish"] = gui.add(movementController, 'end_match' ).name("Finalizar partida").disable();
+    // Opciones de debug
+    gui.add(movementController, 'move_pawn' ).name("Mover ficha");
+    gui.add(movementController, 'winSeq' ).name("Win sequence");
 
     const folder = gui.addFolder( 'Detalles' );
     folder.add(movementController, "match_duration").name("Duración partida").listen().disable();
@@ -735,10 +648,11 @@ function addGui() {
 
 }
 
-const update = () => {
+function update() {
 
     world.fixedStep()
 
+    // Vincular posicion dado fisico con dado visual
     dado = scene.getObjectByName("dado")
     if (dado) {
         const posDado = new THREE.Vector3(dadoFisico.position.x, dadoFisico.position.y-11, dadoFisico.position.z)
@@ -747,6 +661,7 @@ const update = () => {
         dado.quaternion.copy(dadoFisico.quaternion)
     }
 
+    // Mostrar tiempos de partida
     movementController.time = new Date().toLocaleTimeString()
 
     if (matchStartTime) {
@@ -762,7 +677,7 @@ const update = () => {
         movementController.match_duration = "Sin partida en curso"
     }
 
-    // Actualizar variables
+    // Actualizar variables de fichas
     for (const color in fichas) {
         if (fichas[color]["personaje"])
             fichas[color]["personaje"].position.y = altura_personajes[color].v
@@ -774,31 +689,33 @@ const update = () => {
         }
     }
 
+    // Mover capybaras si es necesario
+    const capybaraSpeed = 5
     for (const i in capybaras) {
         const rotate = (capybaras[i].position.x < -600 || capybaras[i].position.x > 600) && 
             (capybaras[i].position.z < -600 || capybaras[i].position.z > 600) && 
             THREE.MathUtils.randInt(1,1000) < 5
 
         if (capyDirections[i].dir == "z+"){
-            capybaras[i].position.z += 10
+            capybaras[i].position.z += capybaraSpeed
             if ((capybaras[i].position.z >= 2100 || rotate) && !capyDirections[i].rotating) {
                 capyDirections[i].dir = "x+"
                 rotateCapybara(capybaras[i], capyDirections[i])
             }
         } else if (capyDirections[i].dir == "x+") {
-            capybaras[i].position.x += 10
+            capybaras[i].position.x += capybaraSpeed
             if ((capybaras[i].position.x >= 2100 || rotate) && !capyDirections[i].rotating) {
                 capyDirections[i].dir = "z-"
                 rotateCapybara(capybaras[i], capyDirections[i])
             }
         } else if (capyDirections[i].dir == "z-") {
-            capybaras[i].position.z -= 10
+            capybaras[i].position.z -= capybaraSpeed
             if ((capybaras[i].position.z <= -2100 || rotate) && !capyDirections[i].rotating) {
                 capyDirections[i].dir = "x-"
                 rotateCapybara(capybaras[i], capyDirections[i])
             }
         } else {
-            capybaras[i].position.x -= 10
+            capybaras[i].position.x -= capybaraSpeed
             if ((capybaras[i].position.x <= -2100 || rotate) && !capyDirections[i].rotating) {
                 capyDirections[i].dir = "z+"
                 rotateCapybara(capybaras[i], capyDirections[i])
@@ -844,7 +761,7 @@ function render(time) {
     renderer.setViewport(0,window.innerHeight-cameraSize+1,cameraSize,cameraSize)
     renderer.render(scene, camaraCenital)
 
-    // Mover robot
+    // Mover usando el teclado
     lastTimeMsec = lastTimeMsec || time
     const delta = time - lastTimeMsec
     funcActualizacion(delta / 10)
@@ -874,7 +791,7 @@ function rayTracing(evento) {
 
         const is = rayo.intersectObjects(ficha.children, true)
         if (is.length > 0 && valorDado > 0 && color == Object.keys(fichas)[turno]) {
-            move_pawn(ficha, valorDado, true)
+            movePawn(ficha, valorDado, true)
         }
     }
         

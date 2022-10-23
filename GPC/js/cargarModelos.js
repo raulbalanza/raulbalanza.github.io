@@ -47,7 +47,7 @@ const add_plants = (gltfLoader) => {
 
                 const plantas = [obj1.scene, obj2.scene, obj3.scene]
 
-                for (let i = 0; i < 600; i++) {
+                for (let i = 0; i < 300; i++) {
 
                     const robj = THREE.MathUtils.randInt(0, 2)
 
@@ -103,17 +103,21 @@ const add_dice = (objeto) => {
 
 const add_pawns = (objeto) => {
 
-    enableShadow(objeto.scene)
-
     for (const color in fichas) {
         const ficha = objeto.scene.children[0].children[0].children[1].clone()
+        
+        const r = fichas[color]["color"].r
+        const g = fichas[color]["color"].g
+        const b = fichas[color]["color"].b
+        const material = new THREE.MeshStandardMaterial({ 
+            color: "rgb("+r+","+g+","+b+")"
+        })
+
         for (const parte of ficha.children){
-            const r = fichas[color]["color"].r/255
-            const g = fichas[color]["color"].g/255
-            const b = fichas[color]["color"].b/255
-            parte.material = parte.material.clone()
-            parte.material.color.setRGB(r, g, b)
+            parte.material = material
         }
+
+        enableShadow(ficha)
         ficha.name = 'ficha_' + color;
         ficha.position.x = fichas[color]["pos_inicial"].x
         ficha.position.y = y_suelo_fichas

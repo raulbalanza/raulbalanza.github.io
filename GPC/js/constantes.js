@@ -106,4 +106,25 @@ const pos = [
     [23.1, 75]
 ]
 
-export { pos_casa, pos, y_suelo_fichas, y_suelo_personajes }
+const creditsText = `
+=====================
+Parchís simplificado
+=====================
+
+Implementado utilizando principalmente la biblioteca Three.js
+
+Creado por Raúl Balanzá García como trabajo final de la asignatura GPC del MIARFID en la UPV.
+
+Modelos utilizados:
+
+- Dado, de macriciox
+- Ficha, de Adam.Klimo
+- Tablero, de PJ
+- Mesa y sillas de jardín, de anDDDres
+- Personajes, de micaelsampaio
+- Habitación y textura del suelo, de Humus
+- Capybaras, de Ear.Rodriguez
+- Flores, de Luis Gustavo, Kon e Izzy
+`
+
+export { pos_casa, pos, y_suelo_fichas, y_suelo_personajes, creditsText }
