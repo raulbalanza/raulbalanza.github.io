@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GPC - Pr&aacute;ctica 5</title>
+    <style>
+        body {
+            background-color: white;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info {
+            position: absolute;
+            bottom: 0px;
+            left: 50px;
+            width: 30%;
+            text-align: left;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor de la app -->
+    <div id="container"></div>
+
+    <div id="info" style="margin-bottom: 15px;">
+        <h2>Pr&aacute;ctica 5<br>Ra&uacute;l Balanz&aacute;</h2>
+    </div>
+
+    <!-- Scripts de biblioteca y app -->
+    <script type="importmap">
+        { "imports": {"three": "./lib/three.module.js"} }
+    </script>
+    <script src="./lib/threex.keyboardstate.js"></script>
+
+    <script type="module" src="./js/practica5.js"></script>
+</body>
+</html>
