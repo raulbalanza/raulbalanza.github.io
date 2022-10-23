@@ -122,7 +122,7 @@ Modelos utilizados:
 - Tablero, de PJ
 - Mesa y sillas de jardín, de anDDDres
 - Personajes, de micaelsampaio
-- Habitación y textura del suelo, de Humus
+- Habitación, de Humus
 - Capybaras, de Ear.Rodriguez
 - Flores, de Luis Gustavo, Kon e Izzy
 `

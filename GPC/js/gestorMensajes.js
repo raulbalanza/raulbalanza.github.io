@@ -40,9 +40,7 @@ function showToast(message, turn, timeout) {
         .to({valor: [1]}, 500)
         .onUpdate((value) => { toast.style.opacity = value["valor"] })
         .onComplete(() => {
-            if (timeout) {
-                //toastTimeout = setTimeout(() => { hideToast() }, timeout)
-            }
+            //if (timeout) { toastTimeout = setTimeout(() => { hideToast() }, timeout) }
         })
         .start()
 
