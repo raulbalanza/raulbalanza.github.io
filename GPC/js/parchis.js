@@ -645,8 +645,8 @@ function addGui() {
     guiControls["start"] = gui.add(movementController, 'start_match' ).name("Comenzar partida");
     guiControls["finish"] = gui.add(movementController, 'end_match' ).name("Finalizar partida").disable();
     // Opciones de debug
-    gui.add(movementController, 'move_pawn' ).name("Mover ficha");
-    gui.add(movementController, 'winSeq' ).name("Win sequence");
+    //gui.add(movementController, 'move_pawn' ).name("Mover ficha");
+    //gui.add(movementController, 'winSeq' ).name("Win sequence");
 
     const folder = gui.addFolder( 'Detalles' );
     folder.add(movementController, "match_duration").name("Duración partida").listen().disable();
