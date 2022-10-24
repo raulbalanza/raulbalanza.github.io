@@ -270,7 +270,7 @@ function addPhysicalWorld() {
 }
 
 function diceResult(e) { 
-    dado.visible = true
+    try { dado.visible = true } catch (ex) {}
     if (e.body.id != 1 || !lanzandoDado) return
 
     setTimeout(() => {
@@ -281,13 +281,6 @@ function diceResult(e) {
             y: (Math.trunc(diceRotation._y*100)/100), 
             z: (Math.trunc(diceRotation._z*100)/100)
         }
-        
-        /*console.log(r)
-
-        console.log(Math.abs(r.x - (-Math.PI/2)), Math.abs(r.y))
-        console.log(Math.abs(r.x - (Math.PI/2)), Math.abs(r.y))
-        console.log(Math.abs(r.x - (Math.PI/2)), Math.abs(r.x))
-        console.log(Math.abs(r.x - Math.PI), Math.abs(r.z))*/
 
         if (Math.abs(r.x - (-Math.PI/2)) < 0.01 && Math.abs(r.y) < 0.01) { valorDado = 2 }
         else if (Math.abs(r.x - (Math.PI/2)) < 0.01 && Math.abs(r.y) < 0.01) { valorDado = 1 }
