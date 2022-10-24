@@ -2,7 +2,7 @@ import { TWEEN } from "../lib/tween.module.min.js"
 
 let toastTimeout = null
 
-function showToast(message, turn, timeout) {
+function showToast(message, turn) {
 
     if (toastTimeout) { 
         clearTimeout(toastTimeout); 
