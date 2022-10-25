@@ -26,7 +26,7 @@ import { showToast, hideToast } from "./gestorMensajes.js"
 let renderer, scene, camera;
 
 // Otras globales
-let material, cameraControls, movementController, stats, world, dado;
+let cameraControls, movementController, stats, world, dado;
 let dadoFisico, sueloFisicoTablero = null;
 let gui, valorDado = -1, turno = -1, lanzandoDado = false, matchStartTime = null;
 let guiControls = {}
@@ -152,33 +152,7 @@ function init() {
 
 function loadScene() {
 
-    // Habitacion
-    const paredes = [];
-    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
-                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/posx.jpg")}) );
-    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
-                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/negx.jpg")}) );
-    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
-                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/posy.jpg")}) );
-    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
-                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/negy.jpg")}) );
-    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
-                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/posz.jpg")}) );
-    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
-                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/negz.jpg")}) );
-    const habitacion = new THREE.Mesh(new THREE.BoxGeometry(5000,5000,5000), paredes);
-    habitacion.position.y = 500
-    scene.add(habitacion);
-
-    const grassTexture = new THREE.TextureLoader().load("images/grass_736.jpg")
-    grassTexture.repeat.set(12, 12)
-    grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping
-
-    material = new THREE.MeshStandardMaterial({
-
-        color: 0x647d31,
-        map: grassTexture
-    })
+    // --- INICIO LUCES ---
 
     const ambientLight = new THREE.AmbientLight(0xFFFFFF);
     scene.add( ambientLight );
@@ -193,7 +167,6 @@ function loadScene() {
     direccional.shadow.camera.far = 15000
     direccional.castShadow = true
     scene.add(direccional)
-    //scene.add(new THREE.CameraHelper(direccional.shadow.camera));
 
     // Luz direccional
     const direccional2 = new THREE.DirectionalLight(0xFFFFFF, 0.7)
@@ -205,7 +178,6 @@ function loadScene() {
     direccional2.shadow.camera.far = 15000
     direccional2.castShadow = true
     scene.add(direccional2)
-    //scene.add(new THREE.CameraHelper(direccional.shadow.camera));
 
     // Luz focal
     const focal = new THREE.SpotLight('gray', 1)
@@ -216,8 +188,34 @@ function loadScene() {
     focal.castShadow = false
     scene.add(focal)
 
+    // --- FIN LUCES ---
+
+    // Habitacion
+    const paredes = [];
+    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/posx.jpg")}) );
+    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/negx.jpg")}) );
+    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/posy.jpg")}) );
+    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/negy.jpg")}) );
+    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/posz.jpg")}) );
+    paredes.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                  map: new THREE.TextureLoader().load(imageBasePath + "meadow/negz.jpg")}) );
+    const habitacion = new THREE.Mesh(new THREE.BoxGeometry(5000, 5000, 5000), paredes);
+    habitacion.position.y = 500
+    scene.add(habitacion);
+
     // Suelo (perpendicular a eje Z por defecto)
-    const suelo = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 10, 10), material)
+    const grassTexture = new THREE.TextureLoader().load("images/grass_736.jpg")
+    grassTexture.repeat.set(12, 12)
+    grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping
+
+    const materialSuelo = new THREE.MeshStandardMaterial({color: 0x647d31, map: grassTexture})
+
+    const suelo = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000, 10, 10), materialSuelo)
     suelo.rotateX(-Math.PI/2)
     suelo.receiveShadow = true
     scene.add(suelo)
@@ -226,7 +224,7 @@ function loadScene() {
     const brickTexture = new THREE.TextureLoader().load("images/brick_225.jpg")
     brickTexture.repeat.set(4, 4)
     brickTexture.wrapS = brickTexture.wrapT = THREE.RepeatWrapping
-    const brickMaterial = new THREE.MeshStandardMaterial({color: 'gray', map: brickTexture})
+    const brickMaterial = new THREE.MeshPhongMaterial({color: 'gray', map: brickTexture})
 
     const base = new THREE.Mesh(new THREE.CylinderGeometry(600, 600, 10, 20), brickMaterial)
     base.receiveShadow = true
@@ -237,6 +235,7 @@ function loadScene() {
 
 }
 
+// Definicion de mundo físico
 function addPhysicalWorld() {
 
     world = new CANNON.World({
@@ -270,6 +269,7 @@ function addPhysicalWorld() {
 }
 
 function diceResult(e) { 
+    // Si el dado carga tarde, lo haremos visible la primera vez que se tire
     try { dado.visible = true } catch (ex) {}
     if (e.body.id != 1 || !lanzandoDado) return
 
@@ -282,6 +282,7 @@ function diceResult(e) {
             z: (Math.trunc(diceRotation._z*100)/100)
         }
 
+        // Identificar valor del dado segun la orientacion del dado
         if (Math.abs(r.x - (-Math.PI/2)) < 0.01 && Math.abs(r.y) < 0.01) { valorDado = 2 }
         else if (Math.abs(r.x - (Math.PI/2)) < 0.01 && Math.abs(r.y) < 0.01) { valorDado = 1 }
         else if (
@@ -308,6 +309,7 @@ function diceResult(e) {
 
 function switchTurn() {
 
+    valorDado = -1
     setTimeout(() => {
 
         turno = (turno+1) % 4
@@ -338,7 +340,7 @@ function movePawn(ficha, n, cambiar_turno) {
     const color = ficha.name.substring(ficha.name.indexOf("_")+1)
     const pos_actual = fichas[color]["casillas"]["actual"]
     
-    if (pos_actual < 0) {
+    if (pos_actual < 0) { // La ficha esta en casa
         if (valorDado != 5) {
             showToast("Necesitas sacar un <b>5</b> para salir de casa.<br>No puedes salir ahora.", turno)
             if (cambiar_turno) switchTurn()
@@ -359,6 +361,7 @@ function movePawn(ficha, n, cambiar_turno) {
             return false;
         }
         
+        // Salir de casa
         new TWEEN.Tween(pos_fichas[color])
             .to({
                 x: [pos[fichas[color]["casillas"]["salida"]][0]],
@@ -376,6 +379,7 @@ function movePawn(ficha, n, cambiar_turno) {
         return true
     }
 
+    // Recorrer camino ficha para ver destino
     let destino = pos_actual
     for (let i = 0; i < n; i++) {
         if (destino == fichas[color]["casillas"]["entrada"]) {
@@ -423,6 +427,7 @@ function movePawn(ficha, n, cambiar_turno) {
 
     const pos_destino = fichas[color]["llegando_casa"] ? pos_casa[color][destino] : pos[destino]
 
+    // Desplazar ficha y ocultar interfaz mientras
     gui.hide()
     new TWEEN.Tween(pos_fichas[color])
         .to({
@@ -597,6 +602,7 @@ function startMatch() {
 }
 
 function throwDice() {
+    // Tirar dado: se elige cuaternion aleatorio para su orientacion
     guiControls["dice"].disable()
     dadoFisico.quaternion.set(
         THREE.MathUtils.randFloat(-1, 1), 
@@ -651,8 +657,10 @@ function addGui() {
 
 function update() {
 
+    // Actualizar mundo fisico
     world.fixedStep()
 
+    // Actualizar animacion giro de camara
     cameraControls.update()
 
     // Vincular posicion dado fisico con dado visual

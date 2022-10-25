@@ -6,10 +6,16 @@ import { ColladaLoader } from "../lib/ColladaLoader.js"
 let scene, fichas, capybaras = [];
 import { y_suelo_fichas, y_suelo_personajes } from "./constantes.js"
 
+let decoracion, animales, juego;
+
 const loadAll = (scene_, fichas_) => {
 
     scene = scene_
     fichas = fichas_
+
+    decoracion = new THREE.Object3D();
+    animales = new THREE.Object3D();
+    juego = new THREE.Object3D();
 
     const colladaLoader = new ColladaLoader();
     
@@ -28,14 +34,21 @@ const loadAll = (scene_, fichas_) => {
     gltfLoader.load('models/ficha.glb', add_pawns);
     
     // Plantas
-    add_plants(gltfLoader)
+    add_plants(gltfLoader);
+    
     // Capybaras
     gltfLoader.load('models/capybara.glb', add_capybaras);
     gltfLoader.load('models/capybara.glb', add_capybaras);
 
+    scene.add(decoracion);
+    scene.add(animales);
+    scene.add(juego);
+
 }
 
 const add_plants = (gltfLoader) => {
+
+    const jardin = new THREE.Object3D()
 
     gltfLoader.load('models/grass.glb', (obj1) => {
         gltfLoader.load('models/flowers.glb', (obj2) => {
@@ -59,13 +72,15 @@ const add_plants = (gltfLoader) => {
 
                     const planta = plantas[robj].clone()
                     planta.position.set(x, 0, z)
-                    scene.add(planta)
+                    jardin.add(planta)
 
                 }
 
             })
         })
     })
+
+    decoracion.add(jardin)
     
 }
 
@@ -79,14 +94,16 @@ const add_capybaras = (objeto) => {
     let z = 0; while (z >= -600 && z <= 600) z = THREE.MathUtils.randFloat(-2150, 2150)
 
     capy.position.set(x, 0, z)
-    scene.add(capy)
+    animales.add(capy)
     capybaras.push(capy)
 }
 
 const add_table = (objeto) => {
+
     enableShadow(objeto.scene)
     objeto.scene.scale.set(10, 10, 10)
-    scene.add(objeto.scene)
+    decoracion.add(objeto.scene) // Zona de juego
+
 }
 
 const add_dice = (objeto) => {
@@ -97,11 +114,13 @@ const add_dice = (objeto) => {
     objeto.scene.position.y = 363;
     objeto.scene.name = 'dado';
     objeto.scene.visible = false
-    scene.add(dado);
+    juego.add(dado);
 
 }
 
 const add_pawns = (objeto) => {
+
+    const modelo_fichas = new THREE.Object3D();
 
     for (const color in fichas) {
         const ficha = objeto.scene.children[0].children[0].children[1].clone()
@@ -125,8 +144,10 @@ const add_pawns = (objeto) => {
         ficha.scale.set(1.5,1.5,1.5);
         ficha.rotation.x = -Math.PI/2
         fichas[color]["objeto"] = ficha
-        scene.add(ficha);
+        modelo_fichas.add(ficha);
     }
+
+    juego.add(modelo_fichas)
 
 }
 
@@ -159,11 +180,13 @@ const add_board = (objeto) => {
     tablero.scale.set(10, 10, 10)
     tablero.position.set(-110,337,452)
     enableShadow(tablero, false, true)
-    scene.add(tablero);
+    juego.add(tablero);
    
 }
 
 const add_players = (objeto) => {
+
+    const jugadores = new THREE.Object3D()
 
     let i = 4
     while (i--) {
@@ -199,8 +222,10 @@ const add_players = (objeto) => {
 
         }
 
-        scene.add(object3d)
+        jugadores.add(object3d)
     }
+
+    decoracion.add(jugadores)
     
 }
 
